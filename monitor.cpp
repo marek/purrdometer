@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <iostream>
 #include <algorithm>
-#include <iostream>
 
 const std::string BLUEZ_BUS = "org.bluez";
 const std::string ADAPTER_PATH = "/org/bluez/hci0";
@@ -30,115 +29,141 @@ bool loadDeviceMac(std::string& mac)
     return !mac.empty();
 }
 
-void parseCscMeasurement(const std::vector<uint8_t>& data)
-{
-    uint8_t flags = data[0];
-    int index = 1;
+static void onPropertiesChanged(sdbus::Signal& signal) {
+    try {
+        std::string interface;
+        std::map<std::string, sdbus::Variant> changedProperties;
+        std::vector<std::string> invalidated;
 
-    if (flags & 0x02)
-    {
-        uint16_t crank_revs = data[index] | (data[index+1]<<8);
-        uint16_t crank_event_time = data[index+2] | (data[index+3]<<8);
+        signal >> interface >> changedProperties >> invalidated;
 
-        std::cout << "[Cadence sensor] Crank revs: " << crank_revs
-                  << ", Event time: " << crank_event_time << std::endl;
+        std::cout << "🔔 Signal: " << interface << " (path: " << signal.getPath() << ")" << std::endl;
+
+        // Show all properties that changed
+        for (const auto& [property, value] : changedProperties) {
+            std::cout << "  → " << property;
+            if (property == "Value") {
+                try {
+                    auto data = value.get<std::vector<uint8_t>>();
+                    std::cout << " = [";
+                    for (size_t i = 0; i < data.size(); ++i) {
+                        printf("%02X", data[i]);
+                        if (i < data.size() - 1) std::cout << " ";
+                    }
+                    std::cout << "] (" << data.size() << " bytes)" << std::endl;
+
+                    // Parse CSC data
+                    if (data.size() >= 1) {
+                        uint8_t flags = data[0];
+                        std::cout << "    🚴 CSC Flags: 0x" << std::hex << (int)flags << std::dec;
+                        if (flags & 0x01) std::cout << " (wheel)";
+                        if (flags & 0x02) std::cout << " (crank)";
+                        std::cout << std::endl;
+                    }
+                } catch (const std::exception& e) {
+                    std::cout << " (not bytes: " << e.what() << ")" << std::endl;
+                }
+            } else if (property == "Connected") {
+                std::cout << " = " << (value.get<bool>() ? "true" : "false") << std::endl;
+            } else {
+                std::cout << " = <value>" << std::endl;
+            }
+        }
+
+        // Show invalidated properties
+        if (!invalidated.empty()) {
+            std::cout << "  Invalidated: ";
+            for (const auto& prop : invalidated) {
+                std::cout << prop << " ";
+            }
+            std::cout << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cout << "❌ Signal handler error: " << e.what() << std::endl;
     }
 }
 
 int main()
 {
-    auto connection = sdbus::createSystemBusConnection();
-
-    std::string mac;
-    if (!loadDeviceMac(mac)) {
-        std::cerr << "No device MAC found in " << DEVICE_FILE << std::endl;
+    std::string deviceMac;
+    if (!loadDeviceMac(deviceMac)) {
+        std::cerr << "No device MAC found. Run pair first." << std::endl;
         return 1;
     }
 
-    std::string devicePath = macToDbusPath(mac);
-    auto device = sdbus::createProxy(*connection, BLUEZ_BUS, devicePath);
+    std::string devicePath = macToDbusPath(deviceMac);
+    std::cout << "Monitoring device: " << deviceMac << " (" << devicePath << ")" << std::endl;
+
+    auto connection = sdbus::createSystemBusConnection();
     auto manager = sdbus::createProxy(*connection, BLUEZ_BUS, "/");
 
-    bool notificationStarted = false;
-    std::string measurementCharPath;
+    // Set up global signal handler BEFORE connecting
+    auto monitorProxy = sdbus::createProxy(*connection, BLUEZ_BUS, "/");
+    monitorProxy->registerSignalHandler("org.freedesktop.DBus.Properties", "PropertiesChanged", onPropertiesChanged);
+    monitorProxy->finishRegistration();
+    std::cout << "📡 Global signal handler registered" << std::endl;
 
-    while(true)
-    {
+    std::string batteryCharPath;
+    bool setupDone = false;
+
+    while (true) {
         try {
-            bool isConnected = device->getProperty("Connected")
-                .onInterface("org.bluez.Device1").get<bool>();
+            auto device = sdbus::createProxy(*connection, BLUEZ_BUS, devicePath);
+            bool connected = device->getProperty("Connected").onInterface("org.bluez.Device1").get<bool>();
 
-            if (!isConnected)
-            {
+            if (!connected) {
                 std::cout << "Device disconnected. Attempting reconnection..." << std::endl;
                 try {
                     device->callMethod("Connect").onInterface("org.bluez.Device1");
-                } catch(const std::exception &e){
-                    std::cerr << "Reconnect attempt error: " << e.what() << std::endl;
+                } catch (const std::exception& e) {
+                    std::cout << "Reconnect error: " << e.what() << std::endl;
                 }
-                notificationStarted = false;
-                measurementCharPath.clear();
+                setupDone = false;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                continue;
             }
-            else if (!notificationStarted)
+            else if (!setupDone)
             {
-                std::cout << "Connected. Setting up notifications..." << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2)); // for services discovery
+                std::cout << "Connected. Setting up CSC notifications (Android style)..." << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(3));
 
-                if (measurementCharPath.empty())
-                {
-                    std::map<sdbus::ObjectPath,
-                             std::map<std::string, std::map<std::string, sdbus::Variant>>>
-                    objects;
+                // Get all GATT objects
+                std::map<sdbus::ObjectPath, std::map<std::string, std::map<std::string, sdbus::Variant>>> objects;
+                manager->callMethod("GetManagedObjects").onInterface("org.freedesktop.DBus.ObjectManager").storeResultsTo(objects);
 
-                    manager->callMethod("GetManagedObjects")
-                        .onInterface("org.freedesktop.DBus.ObjectManager")
-                        .storeResultsTo(objects);
+                // Enable CSC notifications only (like Android)
+                for (const auto& [path, interfaces] : objects) {
+                    if (path.find(devicePath) != std::string::npos && interfaces.count("org.bluez.GattCharacteristic1")) {
+                        auto charProps = interfaces.at("org.bluez.GattCharacteristic1");
+                        auto uuidVar = charProps.find("UUID");
+                        auto flagsVar = charProps.find("Flags");
 
-                    for (const auto& [path, interfaces] : objects) {
-                        auto charIter = interfaces.find("org.bluez.GattCharacteristic1");
-                        if (charIter != interfaces.end()) {
-                            auto uuidVar = charIter->second.find("UUID");
-                            if (uuidVar != charIter->second.end()
-                                && uuidVar->second.get<std::string>() == CSC_MEASUREMENT_CHAR_UUID) {
-                                measurementCharPath = path;
-                                break;
+                        if (uuidVar != charProps.end() && flagsVar != charProps.end()) {
+                            std::string uuid = uuidVar->second.get<std::string>();
+                            auto flags = flagsVar->second.get<std::vector<std::string>>();
+
+                            // Check if characteristic supports notify
+                            bool canNotify = std::find(flags.begin(), flags.end(), "notify") != flags.end();
+
+                            // Only enable CSC notifications like Android - write CCCD directly
+                            if (canNotify && uuid == CSC_MEASUREMENT_CHAR_UUID) {
+                                try {
+                                    auto characteristic = sdbus::createProxy(*connection, BLUEZ_BUS, path);
+                                    characteristic->callMethod("StartNotify").onInterface("org.bluez.GattCharacteristic1");
+                                    std::cout << "✅ CSC notifications enabled with StartNotify" << std::endl;
+                                    std::cout << "    Path: " << path << std::endl;
+                                    std::cout << "    UUID: " << uuid << std::endl;
+                                } catch (const std::exception& e) {
+                                    std::cout << "❌ Failed to start CSC notifications: " << e.what() << std::endl;
+                                }
                             }
                         }
                     }
-
-                    if (measurementCharPath.empty())
-                    {
-                        std::cerr << "CSC Measurement characteristic not found yet." << std::endl;
-                        continue;
-                    }
                 }
 
-                auto characteristic = sdbus::createProxy(*connection, BLUEZ_BUS, measurementCharPath);
-                characteristic->callMethod("StartNotify").onInterface("org.bluez.GattCharacteristic1");
-                characteristic->registerSignalHandler("org.freedesktop.DBus.Properties",
-                                                      "PropertiesChanged",
-                [](sdbus::Signal& signal)
-                {
-                    std::string iface;
-                    std::map<std::string, sdbus::Variant> changed;
-                    std::vector<std::string> invalidated;
-                    signal >> iface >> changed >> invalidated;
-
-                    if (changed.count("Value")) {
-                        auto data = changed["Value"].get<std::vector<uint8_t>>();
-
-                        std::cout << "🔎 Raw notification data (size=" << data.size() << "): ";
-                        for (uint8_t byte : data)
-                            printf("%02X ", byte);
-                        std::cout << std::endl;
-
-                        parseCscMeasurement(data);
-                    }
-                });
-
-                characteristic->finishRegistration();
-                notificationStarted = true;
-                std::cout << "Notifications enabled." << std::endl;
+                setupDone = true;
+                std::cout << "🚴 CSC notifications enabled. Rotate the sensor to generate data..." << std::endl;
+                std::cout << "⏳ Waiting for sensor data..." << std::endl;
             }
         } catch (const std::exception &e) {
             std::cerr << "Error: " << e.what() << std::endl;

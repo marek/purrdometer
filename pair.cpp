@@ -4,28 +4,11 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
-#include <iostream>
 
 const std::string BLUEZ_BUS = "org.bluez";
 const std::string ADAPTER_PATH = "/org/bluez/hci0";
 const std::string DEVICE_FILE = "cadence_device.txt";
 const std::string CSC_SERVICE_UUID = "00001816-0000-1000-8000-00805f9b34fb";
-
-enum class PairingResult {
-    Success,
-    AuthenticationFailed,
-    ConnectionFailed,
-    Timeout,
-    UnknownError
-};
-
-bool isPaired(const std::string& devicePath, sdbus::IConnection& conn)
-{
-    auto deviceProxy = sdbus::createProxy(conn, BLUEZ_BUS, devicePath);
-    try {
-        return deviceProxy->getProperty("Paired").onInterface("org.bluez.Device1").get<bool>();
-    } catch (...) { return false; }
-}
 
 // Save MAC to file
 void saveDevice(const std::string& mac)
@@ -66,28 +49,19 @@ void stopDiscovery(sdbus::IProxy& adapter)
     catch (...) {}
 }
 
-// Attempt pairing/trusting
-PairingResult pairDevice(const std::string& devicePath, sdbus::IConnection& conn)
+// Connect without pairing
+bool connectDevice(const std::string& devicePath, sdbus::IConnection& conn)
 {
     auto device = sdbus::createProxy(conn, "org.bluez", devicePath);
     try {
+        // Set trusted but don't pair
         device->setProperty("Trusted").onInterface("org.bluez.Device1").toValue(true);
-        device->callMethod("Pair").onInterface("org.bluez.Device1");
-        std::cout << "Pairing succeeded and device trusted.\n";
-        return PairingResult::Success;
+        device->callMethod("Connect").onInterface("org.bluez.Device1");
+        std::cout << "Connected without pairing.\n";
+        return true;
     } catch (const sdbus::Error& e) {
-        std::cerr << "Pairing D-Bus error: " << e.getName() << " - " << e.getMessage() << std::endl;
-
-        // Clearly distinguish error type by BlueZ error name:
-        if (e.getName() == "org.bluez.Error.AuthenticationFailed") {
-            return PairingResult::AuthenticationFailed;
-        } else if (e.getName() == "org.bluez.Error.ConnectionAttemptFailed") {
-            return PairingResult::ConnectionFailed;
-        } else if (e.getName() == "org.bluez.Error.AuthenticationTimeout") {
-            return PairingResult::Timeout;
-        } else {
-            return PairingResult::UnknownError;
-        }
+        std::cerr << "Connection error: " << e.getMessage() << std::endl;
+        return false;
     }
 }
 
@@ -95,6 +69,7 @@ int main()
 {
     auto conn = sdbus::createSystemBusConnection();
     auto adapter = sdbus::createProxy(*conn, BLUEZ_BUS, ADAPTER_PATH);
+
     adapter->callMethod("SetDiscoveryFilter").onInterface("org.bluez.Adapter1").withArguments(
         std::map<std::string, sdbus::Variant>{{"UUIDs", std::vector<std::string>{CSC_SERVICE_UUID}}}
     );
@@ -102,11 +77,18 @@ int main()
     std::string mac;
     if (loadDevice(mac)) {
         std::string path = macToDbusPath(mac);
-        if (isPaired(path, *conn)) {
-            std::cout << "Device already paired: " << mac << "\n";
-            return 0;
-        } else {
-            std::cout << "Device in file not paired, will search again.\n";
+        auto device = sdbus::createProxy(*conn, "org.bluez", path);
+        try {
+            bool connected = device->getProperty("Connected").onInterface("org.bluez.Device1").get<bool>();
+            if (connected) {
+                std::cout << "Device already connected: " << mac << "\n";
+                return 0;
+            } else {
+                std::cout << "Attempting to reconnect to saved device.\n";
+                if (connectDevice(path, *conn)) return 0;
+            }
+        } catch (...) {
+            std::cout << "Saved device not available, will search again.\n";
         }
     } else {
         std::cout << "No saved device, starting discovery.\n";
@@ -117,11 +99,8 @@ int main()
 
     while (!found) {
         auto mgr = sdbus::createProxy(*conn, BLUEZ_BUS, "/");
-
         std::map<sdbus::ObjectPath, std::map<std::string, std::map<std::string, sdbus::Variant>>> objs;
-
         mgr->callMethod("GetManagedObjects").onInterface("org.freedesktop.DBus.ObjectManager").storeResultsTo(objs);
-
 
         for (const auto& [path, ifaces] : objs) {
             if (ifaces.count("org.bluez.Device1")) {
@@ -134,7 +113,7 @@ int main()
                         std::cout << "Found cadence device: " << deviceAddress << "\n";
                         saveDevice(deviceAddress);
                         stopDiscovery(*adapter);
-                        if (pairDevice(path, *conn) == PairingResult::Success)
+                        if (connectDevice(path, *conn))
                             found = true;
                         else
                             std::cout << "Retrying...\n";
