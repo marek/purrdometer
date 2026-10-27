@@ -1,0 +1,158 @@
+---
+name: code-style
+description: Comment, prose, naming and coding conventions for purrdometer (C++17 logger source and Python display source, plus the docs/intents corpus) - use before writing or reviewing comments, before writing or editing any intent doc, when choosing a name for a new file, function or type, and before checking BLE or D-Bus handling against the BlueZ reference.
+---
+
+# Code style
+
+## This applies to `docs/intents` prose, not just code comments
+
+Every rule below — no history narration, only state the non-obvious,
+keep it concise — governs `docs/intents/**/*.md` exactly as much as a
+code comment. A doc section describing a system is a comment at
+paragraph scale: it states behaviour and the non-obvious reason for it,
+never "before the rework it was X" or "this is a real improvement over
+what it replaced". The only place history is told is
+`docs/intents/bugs/`.
+
+## Comments are sparse
+
+Add one only where the intent is not obvious from the code, as a short
+one-liner:
+
+```cpp
+// clamp to valid CSC wheel revolution range: sensor wraps at 2^16
+rev_count = static_cast<uint16_t>(raw & 0xFFFF);
+```
+
+```python
+# e-paper is 1-bit: threshold at 128, not 127, to match the display's own dither
+px = 255 if gray >= 128 else 0
+```
+
+No block comments, no explanation of the obvious, no banner
+separators. Leave existing comments as they are unless a change makes
+one false.
+
+## Comments describe behaviour, not history
+
+A comment states what the code does and why that is right — never what
+it used to do, what bug it fixed, or what was reported. That reasoning
+lives in the commit message.
+
+**Violating patterns** — if about to write one, stop and rephrase:
+- `used to` / `previously` / `no longer` / `the old <thing>` /
+  `replaces` / `instead of the`
+- quoting a bug report or a remark from a session
+- `was tried first`, `turned out to be`, `confirmed by running`,
+  `observed crashing` — how it was found, not what is true
+- comparing against an implementation that is no longer in the file
+- a commit reference on a line of code (the commit message says that)
+
+```cpp
+// BAD - narrates history
+// used to poll every 100 ms, which drained the battery faster;
+// now subscribes to CSC notifications
+
+// GOOD - states behaviour and why
+// subscribe to CSC notifications: the sensor pushes data only when
+// the wheel is turning, so polling would wake the CPU for nothing
+```
+
+**A fix often makes the surrounding comment false.** Check comments
+near a change for claims about behaviour that no longer hold.
+
+**Fix by asking**: what does this code do, and the non-obvious reason
+it does it that way? Write only that.
+
+## Keep it concise
+
+Before finishing a comment or a doc paragraph, cut:
+
+- **Self-evaluation** — "this cleanly solves", "the right pattern".
+- **The same fact from a second angle** — if a clause starts "in other
+  words", the first one was enough.
+- **Stacked qualifiers** — say "X because Y", not three clauses
+  building up to it.
+- **Narrating a table before the table** — point at it.
+
+## C++17 conventions
+
+- Use C++17 features freely (`std::optional`, `std::string_view`,
+  structured bindings, `if constexpr`). This is not C++11.
+- D-Bus signal handlers are registered through sdbus-c++ proxy objects
+  and deregistered when the proxy is destroyed; never hold a raw
+  callback pointer past the object's lifetime.
+- Every object that owns a resource has exactly one owner
+  (`std::unique_ptr<T>`); resource release belongs in the destructor,
+  not scattered across call sites.
+- State, kind or mode is an `enum class`; `nullptr`, never `NULL`;
+  named casts, never C casts; file-local code in an unnamed namespace;
+  no macros of our own.
+- **No magic numbers.** A bare `60` tells the reader nothing;
+  `MAX_REVS_PER_SECOND` in the relevant source file does.
+  BLE characteristic UUIDs and SQLite column names are named constants,
+  not string literals scattered through the code.
+- **Read the BlueZ D-Bus API** (the `org.bluez.GattCharacteristic1`
+  interface and the Cycling Speed and Cadence profile specification)
+  before writing BLE handling code.
+- Third-party library headers (`sdbus-c++`, `sqlite3`) are not
+  restyled.
+
+## Templates (`web/pages/*.page`)
+
+- `<%= %>` by default; `<%== %>` only for markup a C++ function built on
+  purpose. A double, a date or a distance goes through a named
+  formatter (`km`, `fixed`, `thousands`, `cal::longDate`), never
+  printed raw ([web/pages.md](../../intents/web/pages.md)).
+- Decide what to show in C++ (`buildDashboard`); keep drawing
+  arithmetic (SVG coordinates) in the template.
+- End control-only lines with `-%>` so the output has no stray blank
+  lines.
+
+## Python conventions
+
+- Target Python 3, no compatibility shims.
+- Type hints on function signatures; `from __future__ import
+  annotations` is fine for forward references.
+- Constants at module level in `UPPER_SNAKE_CASE`
+  (e.g. `DISPLAY_WIDTH = 250`, `DISPLAY_HEIGHT = 122`).
+- **No magic numbers.** The display's pixel dimensions, the touch
+  bar's row heights, the screen names — all named constants.
+- Imports in order: stdlib, then third-party (Pillow, etc.), each group
+  separated by a blank line. No wildcard imports.
+- `unittest` for tests; test files under `python/tests/`, one file
+  per module under test.
+- **Short-circuit returns.** Handle the exceptional case first and
+  return — a guard clause — so the main path stays flat. This holds in
+  C++ and Python equally.
+
+## Naming
+
+- A name says what the thing is: `rotation_count_per_minute`,
+  `days_distance_m`, `TouchBar`.
+- **C++:** types are `PascalCase` (`Wheel`, `Dashboard`); functions,
+  variables and members are `camelCase` (`loadStats`, `diameterM`);
+  private data members end in an underscore (`connected_`); constants
+  are `UPPER_SNAKE_CASE` (`MAX_REVS_PER_SECOND`); namespaces are
+  lowercase (`purr`, `purr::web`); files are kebab-case for programs
+  (`purrdometer-web.cpp`) and lowercase for modules (`wheel.cpp`). A
+  quantity's unit ends its name (`diameterM`, `lastWall`). No type prefix.
+- **Python:** classes are `PascalCase`; functions, variables and
+  module-level names are `snake_case`; constants are `UPPER_SNAKE_CASE`.
+  Private helpers start with `_`.
+- **A new name must not collide with an existing one.** Grep the
+  source first — the headers and module exports are the contract.
+- Rename only when a name is actively misleading; grep every reference
+  first.
+
+## Structure
+
+- A file mixing distinct responsibilities is a split candidate — check
+  while writing, not when asked. The logger's BLE handling, SQLite
+  writes and `--selftest` path are in `src/`; the display's screen
+  renderers, touch handling and fake-DB fixture are in
+  `python/purrdometer/`.
+- Two features that need the same behaviour share the implementation;
+  the NOW screen and the 30-DAYS screen both read from SQLite through
+  the same query helper.
