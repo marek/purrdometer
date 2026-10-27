@@ -54,6 +54,8 @@ install -D -m 644 packaging/etc/purrdometer.conf "$STAGE/etc/purrdometer/purrdom
 install -D -m 644 system/NetworkManager-wifi-powersave.conf \
     "$STAGE/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf"
 install -D -m 644 README.md "$STAGE/usr/share/doc/$PKG/README.md"
+{ printf "Upstream-Name: purrdometer\nLicense: Apache-2.0\n\n"; cat LICENSE.md; } > "$STAGE/usr/share/doc/$PKG/copyright"
+chmod 644 "$STAGE/usr/share/doc/$PKG/copyright"
 
 echo "== control"
 install -d -m 755 "$STAGE/DEBIAN"

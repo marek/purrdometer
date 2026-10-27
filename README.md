@@ -45,7 +45,7 @@ and a page in tens of milliseconds, even on a Pi Zero.
 ## Features
 
 - Every rotation logged to SQLite, including ones made while the logger was down: [the sensor](docs/guide/sensor.md)
-- Distance from the wheel's running diameter: presets for the Ferris G5, Grand Ferris, One Fast Cat and Star Cat L/XL, or any measured size in any unit, with history recomputed when it changes: [configuration](docs/guide/configuration.md)
+- Distance from the wheel's running diameter, with presets for a variety of popular brands or a custom diameter in cm or inches, and history recomputed when it changes: [configuration](docs/guide/configuration.md)
 - NOW, 30 DAYS, CALENDAR and ALL TIME screens on a 2.13" touch e-paper HAT: [screens](docs/guide/screens.md)
 - A web dashboard and JSON API on the home network: [web](docs/guide/web.md)
 - A Bluetooth link that rides out the Pi Zero 2 W's shared WiFi/Bluetooth radio: [troubleshooting](docs/guide/troubleshooting.md#a-sensor-that-keeps-dropping)
@@ -68,7 +68,7 @@ Then spin the wheel to wake the sensor. Dependencies and the details are in
 | Computer | Raspberry Pi Zero 2 W, Raspberry Pi OS bookworm or later |
 | Screen | Waveshare 2.13" Touch e-Paper HAT (V4) |
 | Sensor | Any Bluetooth LE cycling cadence sensor (built with a Garmin one) |
-| Wheel | Ferris G5, Grand Ferris, One Fast Cat, Star Cat, or any wheel with a known diameter |
+| Wheel | One of the popular brands with a preset, or any wheel with a known diameter |
 
 ## Documentation
 
@@ -80,3 +80,7 @@ the web dashboard, configuration, troubleshooting and development.
 purrdometer is built by agentic development with intents, tests and
 implementation. Start with [AGENTS.md](AGENTS.md) and
 [development](docs/guide/development.md).
+
+## License
+
+[Apache-2.0](LICENSE.md).
