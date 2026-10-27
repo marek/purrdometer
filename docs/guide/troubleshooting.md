@@ -28,13 +28,18 @@ reinstall the package.
 
 ## A sensor that is connected but silent
 
-The sensor sends data only while it detects rotation. Spin the wheel through
-full turns. If nothing is logged:
+The sensor sends data only while it detects rotation: full turns in the plane
+of its face, the way a crank turns it, like a clock hand going round. Shaking
+it or spinning it on a table wakes it but does not count.
 
-- check it is mounted face-parallel to the wheel and near the axle ([the sensor](sensor.md#mounting));
+If it is turning and still silent:
+
+- check that BlueZ connects with a random address: `grep -B1 "^Privacy" /etc/bluetooth/main.conf`
+  shows `Privacy = device` under a `# purrdometer:` line. A sensor that was
+  once paired with the Pi sends nothing to the Pi's own address; reinstall the
+  package if the line is missing;
 - check the battery level on NOW;
-- check the sensor reports cadence to its phone app; if not, the sensor is
-  the problem.
+- check it is mounted face-parallel to the wheel and near the axle ([the sensor](sensor.md#mounting)).
 
 ## The Bluetooth trace
 

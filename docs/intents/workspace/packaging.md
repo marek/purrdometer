@@ -39,7 +39,8 @@ their state directory.
 | Setting | Where | Why |
 |---|---|---|
 | `ConnectionSupervisionTimeout = 600` under `[LE]`, after a `# purrdometer:` marker line | `/etc/bluetooth/main.conf` | [../ble/link.md](../ble/link.md); BlueZ 5.66 reads no drop-in directory, so the line goes into `main.conf` itself |
-| Cached `[ConnectionParameters]` cleared, once, when the setting is first added | `/var/lib/bluetooth/*/*/info` | A cached per-device value overrides the default |
+| `Privacy = device` under `[General]`, after its own `# purrdometer:` marker line | `/etc/bluetooth/main.conf` | A random address for every connection: a sensor that kept a pairing with the Pi's own address sends it nothing ([../ble/link.md](../ble/link.md#security)) |
+| Cached `[ConnectionParameters]` cleared whenever a BlueZ setting is added | `/var/lib/bluetooth/*/*/info` | A cached per-device value overrides the default |
 | `wifi.powersave = 2` | the NetworkManager drop-in | [../ble/link.md](../ble/link.md) |
 | Bluetooth not soft-blocked (rfkill), on every install and upgrade | `/sys/class/rfkill`, kept by systemd-rfkill | Without it BlueZ cannot power the adapter; an OS upgrade can leave it blocked |
 | The `purrdometer` system user and group | `adduser` | Services run unprivileged |
@@ -48,9 +49,9 @@ their state directory.
 
 | Action | Result |
 |---|---|
-| Install, upgrade | User and state directory exist, the BlueZ setting is present exactly once, all three services enabled and restarted |
+| Install, upgrade | User and state directory exist, each BlueZ setting is present exactly once, all three services enabled and restarted |
 | Remove | Services stopped and disabled; conffiles, system settings and data kept |
-| Purge | The marker line and its setting removed from `main.conf` and BlueZ restarted; the history in `/var/lib/purrdometer` and the `purrdometer` user that owns it are kept, and the purge says so |
+| Purge | Every marker line and the setting after it removed from `main.conf` and BlueZ restarted; the history in `/var/lib/purrdometer` and the `purrdometer` user that owns it are kept, and the purge says so |
 | Reinstall after purge | Same as a first install; the kept history is picked up |
 
 A later `bluez` upgrade may ask about the modified `main.conf`; keeping the

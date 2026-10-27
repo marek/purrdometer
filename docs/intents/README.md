@@ -54,6 +54,7 @@ listing them.
 | [web/settings.md](web/settings.md) | The gear page: what it changes, `settings.ini` over `/etc`, who may save (`lan`, `pin`, `open`, `off`), how changes are picked up |
 | [web/pages.md](web/pages.md) | `.page` files compiled to C++ by `pagec`: tags, escaping, formatters |
 | [bugs/supervision-timeout-drops.md](bugs/supervision-timeout-drops.md) | The link dropping every 7–16 s: a 420 ms supervision timeout on a ~200 ms interval |
+| [bugs/silent-to-a-central-it-remembers.md](bugs/silent-to-a-central-it-remembers.md) | A connected, subscribed sensor that sent nothing to the Pi alone: it remembered a pairing with the Pi's address |
 | [bugs/notify-before-services-resolved.md](bugs/notify-before-services-resolved.md) | A connected sensor that never sent data: notifications requested before GATT discovery finished |
 
 ## Reading paths
@@ -61,7 +62,7 @@ listing them.
 - **New here**: this README → overview → glossary → workspace/repos →
   workspace/build-and-run → data/storage.
 - **Changing the BLE side**: ble/link → ble/sensor → data/accounting →
-  bugs/supervision-timeout-drops.
+  bugs/supervision-timeout-drops → bugs/silent-to-a-central-it-remembers.
 - **Changing what is stored**: data/storage → data/accounting → display/screens.
 - **Changing a screen or the touch bar**: display/screens →
   display/touch-bar → display/refresh → data/wheels.

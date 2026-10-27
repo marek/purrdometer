@@ -37,6 +37,26 @@ The sensor is used **unbonded**, the way the phone app talks to it: no
 pairing, no encryption. The device is marked `Trusted` so BlueZ keeps its
 object between connections.
 
+The Pi connects with a **random address** (`Privacy = device` in BlueZ's
+`main.conf`, set by the package), never its own. A sensor remembers each
+central it has met: one that was once paired with the Pi's own address sends
+it nothing over an unencrypted link, connected and subscribed or not, while a
+central it does not know gets the measurements
+([../bugs/silent-to-a-central-it-remembers.md](../bugs/silent-to-a-central-it-remembers.md)).
+A random address is unknown to every sensor, whatever was paired with this Pi
+before.
+
+**The alternative, pairing.** The Bluetooth-standard way to satisfy a sensor
+that insists on encryption is to pair with it (`bluetoothctl pair`), after
+which BlueZ encrypts every connection with the stored key. It is not used:
+a key on the Pi must match the one the sensor holds, so a reinstall, a new
+SD card or a sensor paired elsewhere breaks the link until someone pairs
+again by hand, while privacy needs nothing. Switching to it means pairing the
+sensor once, removing `Privacy = device`, and having the logger treat a
+missing key as a reason to pair rather than as a plain connection.
+Clearing the pairing on the sensor instead (on Garmin sensors, usually by
+taking the battery out) fixes one sensor until it is paired again.
+
 ## Connecting
 
 | State | The logger |
@@ -44,7 +64,7 @@ object between connections.
 | No saved sensor | Scans for any device advertising the CSC service, saves the first one's address ([sensor.md](sensor.md#which-sensor)) |
 | Saved sensor, BlueZ knows it | Calls `Connect`; if that fails (the sensor is asleep and not advertising), scans until it advertises again |
 | Saved sensor, BlueZ forgot it | Scans for that address |
-| Connected | Waits for `ServicesResolved`, then starts notifications ([../bugs/notify-before-services-resolved.md](../bugs/notify-before-services-resolved.md)) |
+| Connected | Waits for `ServicesResolved`, then starts notifications ([../bugs/notify-before-services-resolved.md](../bugs/notify-before-services-resolved.md)). A sensor that detects rotation asks for a faster connection interval (about 210–240 ms, against about 500 ms idle) and streams; one that is connected and silent is not turning |
 | Disconnected | Marks the database `connected = 0` and starts over |
 
 Errors back off exponentially up to 30 s. The notification session belongs to
