@@ -38,8 +38,12 @@ void makeDemoDb(const std::string& path, int days, unsigned seed)
     for (int m = 0; m < 25; ++m) // running right now, so the live view is consistent
         minute(now / 60 - m, between(40, 60));
     sql += std::format("INSERT INTO state VALUES ('connected', '1'), ('rpm', '54'), ('last_motion', '{}'), "
-                       "('battery', '85');COMMIT;",
-                       now);
+                       "('battery', '85'), ('sensor', 'ED:7B:C2:C9:C1:D3'), ('sensor_kind', 'cadence');"
+                       "CREATE TABLE sensors (address TEXT PRIMARY KEY, name TEXT, kind TEXT, rssi INTEGER, "
+                       "last_seen REAL);"
+                       "INSERT INTO sensors VALUES ('ED:7B:C2:C9:C1:D3', 'CAD-BLE0384139', 'cadence', -54, {}), "
+                       "('C1:22:33:44:55:66', 'SPD-BLE0123456', 'speed', -71, {});COMMIT;",
+                       now, now, now - 300);
 
     char* err = nullptr;
     int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &err);

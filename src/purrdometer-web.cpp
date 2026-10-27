@@ -28,6 +28,7 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace {
@@ -41,7 +42,17 @@ struct Paths {
     std::string config = purr::CONFIG_PATH;
     std::string overrides = purr::OVERRIDES_PATH;
     std::string wheels = purr::WHEELS_PATH;
+    std::string scanRequest = "/var/lib/purrdometer/scan-request"; // touched to ask the logger for a scan
 };
+
+// A scan the logger was asked for lasts 20 s (docs/intents/ble/sensor.md#which-sensor).
+constexpr int SCAN_SECONDS = 20;
+
+std::time_t modified(const std::string& path)
+{
+    struct stat st{};
+    return stat(path.c_str(), &st) == 0 ? st.st_mtime : 0;
+}
 
 struct Server {
     Paths paths;
@@ -85,6 +96,7 @@ std::string renderApi(const Server& srv)
                   {"connected", st.live.connected},
                   {"last_motion", st.live.lastMotion ? nlohmann::json(*st.live.lastMotion) : nlohmann::json(nullptr)},
                   {"battery", st.live.battery ? nlohmann::json(*st.live.battery) : nlohmann::json(nullptr)}}},
+        {"sensor", {{"address", st.live.sensor}, {"kind", st.live.sensorKind}}},
         {"daily", daily},
     };
     return j.dump();
@@ -150,6 +162,10 @@ std::string renderSettings(const Server& srv, const purr::Config& cfg, const std
     view.token = token;
     view.overridden = cfg.overridden;
     view.configErrors = cfg.errors;
+    view.now = std::time(nullptr);
+    view.sensors = purr::loadSensors(srv.paths.db);
+    view.live = purr::loadStats(srv.paths.db, purr::cal::localDay(view.now)).live;
+    view.scanning = view.now - modified(srv.paths.scanRequest) < SCAN_SECONDS + 5;
     std::string html;
     purr::pages::settings(html, view);
     return html;
@@ -228,6 +244,8 @@ void routes(const Server& srv, httplib::Server& server)
         number("full_refresh_every", e.fullRefreshEvery);
         number("active_refresh_s", e.activeRefreshS);
         number("idle_refresh_s", e.idleRefreshS);
+        std::string sensor = req.get_param_value("sensor");
+        e.sensor = sensor.empty() ? std::nullopt : std::optional<std::string>(sensor);
 
         purr::SettingsView view;
         view.values = e;
@@ -241,6 +259,16 @@ void routes(const Server& srv, httplib::Server& server)
         purr::saveOverrides(e, srv.paths.overrides);
         std::cout << "settings saved from " << req.remote_addr << std::endl;
         res.set_redirect("/settings?saved=1", 303);
+    });
+    server.Post("/settings/scan", [&](const httplib::Request& req, httplib::Response& res) {
+        purr::Config c = srv.config();
+        purr::SettingsView view;
+        view.values = forForm(c.editable);
+        if (!authorised(req, res, c, view))
+            return sendSettings(srv, req, res, std::move(view), c);
+        std::ofstream(srv.paths.scanRequest, std::ios::trunc) << std::time(nullptr) << "\n";
+        std::cout << "scan requested from " << req.remote_addr << std::endl;
+        res.set_redirect("/settings#sensor", 303);
     });
     server.Post("/settings/reset", [&](const httplib::Request& req, httplib::Response& res) {
         purr::Config c = srv.config();
@@ -371,6 +399,15 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     check(cfg.overridden && cfg.editable.units == "cm" && cfg.wheel.key == "grand-ferris" && cfg.editable.rotate180 &&
               cfg.port == 9000,
           "overrides win over /etc, and an empty diameter clears the measured one");
+    check(normalizeAddress("ed:7b:c2:c9:c1:d3") == "ED:7B:C2:C9:C1:D3" && !normalizeAddress("ED:7B:C2:C9:C1") &&
+              !normalizeAddress("ED-7B-C2-C9-C1-D3"),
+          "sensor addresses");
+    std::ofstream(over) << "[sensor]\naddress = aa:bb:cc:dd:ee:ff\n";
+    check(sensorChoice(conf, over) == "AA:BB:CC:DD:EE:FF", "the logger reads the sensor choice");
+    std::ofstream(over) << "[sensor]\naddress =\n";
+    check(!sensorChoice(conf, over), "an empty choice is automatic");
+    std::remove(over.c_str());
+    saveOverrides(e, over);
     Editable bad = e;
     bad.diameter = std::string("48.5");
     bad.idleRefreshS = 1;
@@ -388,7 +425,13 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
                           "INSERT INTO minutes VALUES (" + std::to_string(now / 60) + ", 100), (" +
                           std::to_string(now / 60 - 3 * 1440) + ", 50);"
                           "INSERT INTO state VALUES ('connected','1'), ('rpm','54'), ('last_motion','" +
-                          std::to_string(now) + "'), ('battery','85');";
+                          std::to_string(now) + "'), ('battery','85'), ('sensor','ED:7B:C2:C9:C1:D3'), "
+                          "('sensor_kind','cadence');"
+                          "CREATE TABLE sensors (address TEXT PRIMARY KEY, name TEXT, kind TEXT, rssi INTEGER, "
+                          "last_seen REAL);"
+                          "INSERT INTO sensors VALUES ('ED:7B:C2:C9:C1:D3', 'CAD-BLE0384139', 'cadence', -54, " +
+                          std::to_string(now) + "), ('AA:BB:CC:DD:EE:FF', 'SPD-BLE1', NULL, -80, " +
+                          std::to_string(now - 60) + ");";
         sqlite3_exec(raw, sql.c_str(), nullptr, nullptr, nullptr);
         sqlite3_close(raw);
     }
@@ -422,6 +465,10 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     check(page && page->status == 200 && token.size() == 32 &&
               page->body.find("value=\"one-fast-cat\" data-m") != std::string::npos,
           "settings page and its form token");
+    check(page && page->body.find("CAD-BLE0384139") != std::string::npos &&
+              page->body.find("SPD-BLE1") != std::string::npos && page->body.find("battery 85%") != std::string::npos &&
+              page->body.find("cadence sensor") != std::string::npos,
+          "the sensors heard, the one connected and its mounting help");
 
     httplib::Headers withCookie = {{"Cookie", prefix + token}};
     auto form = [&](const std::string& diameter) {
@@ -435,6 +482,17 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     check(saved && saved->status == 303 && after.wheel.name.find("measured") != std::string::npos &&
               near(after.wheel.diameterM, 1.15),
           "a save from the home network is written and used");
+    auto chosen = form("115");
+    chosen.emplace("sensor", "aa:bb:cc:dd:ee:ff");
+    auto savedSensor = client.Post("/settings", withCookie, chosen);
+    check(savedSensor && savedSensor->status == 303 && sensorChoice(conf, over) == "AA:BB:CC:DD:EE:FF",
+          "a chosen sensor is saved for the logger");
+    srv.paths.scanRequest = tmpDir + "/selftest-scan-request";
+    std::remove(srv.paths.scanRequest.c_str());
+    auto scan = client.Post("/settings/scan", withCookie, httplib::Params{{"token", token}});
+    check(scan && scan->status == 303 && access(srv.paths.scanRequest.c_str(), F_OK) == 0,
+          "scan asks the logger through its request file");
+    std::remove(srv.paths.scanRequest.c_str());
     auto refused = client.Post("/settings", withCookie, form("48.5"));
     check(refused && refused->status == 400 && refused->body.find("did you mean 48.5in") != std::string::npos,
           "an implausible diameter is refused with a hint");

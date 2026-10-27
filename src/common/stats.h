@@ -17,6 +17,8 @@ struct Live {
     int rpm = 0;
     std::optional<double> lastMotion; // unix time
     std::optional<int> battery;
+    std::string sensor;     // the address in use
+    std::string sensorKind; // "cadence" or "speed"
 
     // The wheel counts as running for 15 s after the last rotation (display/screens.md).
     bool running(double now) const { return rpm > 0 && lastMotion && now - *lastMotion < 15; }
@@ -37,5 +39,15 @@ struct Stats {
 
 // A missing database or schema reads as no history.
 Stats loadStats(const std::string& dbPath, cal::Day today);
+
+// A CSC sensor the logger has heard (docs/intents/data/storage.md).
+struct SeenSensor {
+    std::string address, name, kind; // kind: "cadence", "speed" or empty until read
+    std::optional<int> rssi;
+    double lastSeen = 0;            // unix time
+};
+
+// Newest first; empty without a database.
+std::vector<SeenSensor> loadSensors(const std::string& dbPath);
 
 } // namespace purr

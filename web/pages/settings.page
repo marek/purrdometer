@@ -5,7 +5,7 @@
 <%@ param const purr::SettingsView& v %>
 <% using namespace purr; using namespace purr::web; -%>
 <% const auto& e = v.values; const bool inches = e.units == "in"; -%>
-<% head(out, "Settings · purrdometer", v.current.name, 0); -%>
+<% head(out, "Settings · purrdometer", v.current.name, v.scanning ? 5 : 0); -%>
 <% if (v.saved) { -%>
 <section class="ok">Saved. The dashboard uses it now; the screen within a minute.</section>
 <% } -%>
@@ -54,6 +54,63 @@
   <p class="hint">Now: <%= describe(v.current, e.units) %></p>
 </section>
 
+<section id="sensor">
+  <h2>Sensor <span>· a cadence or speed sensor on the wheel</span></h2>
+  <label class="choice"><input type="radio" name="sensor" value=""<%= e.sensor ? "" : " checked" %>> Automatic <span class="muted">· the first sensor heard</span></label>
+<% for (auto& s : v.sensors) { const bool inUse = s.address == v.live.sensor; -%>
+  <label class="choice"><input type="radio" name="sensor" value="<%= s.address %>"<%= e.sensor && *e.sensor == s.address ? " checked" : "" %>>
+    <strong><%= s.name.empty() ? s.address : s.name %></strong>
+    <span class="muted">· <%= s.kind.empty() ? "kind not read yet" : s.kind %><% if (s.rssi) { %> · <%= *s.rssi %> dBm<% } %> · heard <%= ago(double(v.now) - s.lastSeen) %> · <%= s.address %></span>
+<%   if (inUse) { -%>
+    <span class="tag"><%= v.live.connected ? "connected" : "chosen, asleep" %><% if (v.live.battery) { %> · battery <%= *v.live.battery %>%<% } %></span>
+<%   } -%>
+  </label>
+<% } -%>
+<% if (v.sensors.empty()) { -%>
+  <p class="hint">No sensors heard yet. Turn the sensor to wake it, then scan.</p>
+<% } -%>
+  <div class="row">
+    <button type="submit" class="secondary" formaction="/settings/scan" formnovalidate<%= v.canSave && !v.scanning ? "" : " disabled" %>><%= v.scanning ? "Scanning…" : "Scan for sensors" %></button>
+    <span class="hint"><%= v.scanning ? "about 20 s; the list fills in as sensors are heard" : "turn the sensor first: a sleeping sensor is silent" %></span>
+  </div>
+
+<% const bool speed = v.live.sensorKind == "speed"; -%>
+  <h2>Mounting <span>· <%= speed ? "speed sensor" : "cadence sensor" %></span></h2>
+  <div class="mount">
+<% if (speed) { -%>
+    <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3"/>
+      <circle cx="60" cy="60" r="8" fill="currentColor"/>
+      <rect x="66" y="52" width="22" height="16" rx="4" fill="var(--c3)"/>
+      <path d="M60 14 A46 46 0 0 1 102 44" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#a)"/>
+      <defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--muted)"/></marker></defs>
+    </svg>
+    <div>
+      <p>On the axle or hub, as it would sit on a bicycle hub, or on the wheel's face like a cadence sensor. One turn of the wheel is one revolution.</p>
+      <p class="hint">Keep the battery door reachable: fix the sensor's holder, not the sensor.</p>
+    </div>
+<% } else { -%>
+    <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3"/>
+      <circle cx="60" cy="60" r="4" fill="currentColor"/>
+      <rect x="68" y="38" width="20" height="20" rx="10" fill="var(--c3)"/>
+      <path d="M60 14 A46 46 0 0 1 102 44" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#a)"/>
+      <defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--muted)"/></marker></defs>
+    </svg>
+    <div>
+      <p>On the back face of the wheel, close to the axle (about a crank's length, 15 cm), its face flat against the wheel. It counts turns of its own orientation, like a clock hand going round, so one turn of the wheel is one revolution.</p>
+      <p class="hint">Keep the battery door reachable: fix the sensor's holder, not the sensor. Shaking or spinning it in the hand wakes it but does not count.</p>
+    </div>
+<% } -%>
+  </div>
+
+  <h2>Test <span>· nothing is saved</span></h2>
+  <div class="row">
+    <button type="button" class="secondary" id="test">Start test</button>
+    <span id="testout" class="muted">press Start, then turn the wheel</span>
+  </div>
+</section>
+
 <section>
   <h2>Screen</h2>
   <label><input type="checkbox" name="rotate180" value="1"<%= e.rotate180 ? " checked" : "" %>> Upside down (rotate 180°)</label>
@@ -94,6 +151,27 @@
         var m = parseFloat(o.dataset.m), size = toIn ? (m / 0.0254).toFixed(1) + ' in' : (m * 100).toFixed(1) + ' cm';
         o.textContent = o.textContent.replace(/ · [0-9.]+ (cm|in)/, ' · ' + size);
       });
+    });
+  });
+})();
+// The live test: rotations and rpm since Start, from the same JSON as the dashboard.
+(function () {
+  var button = document.getElementById('test'), out = document.getElementById('testout'), timer = null, base = 0, until = 0;
+  function stats() { return fetch('/api/stats', {cache: 'no-store'}).then(function (r) { return r.json(); }); }
+  function stop() { clearInterval(timer); timer = null; button.textContent = 'Start test'; }
+  button.addEventListener('click', function () {
+    if (timer) return stop();
+    stats().then(function (s) {
+      base = s.total.rotations; until = Date.now() + 120000; button.textContent = 'Stop';
+      out.textContent = s.live.connected ? 'turn the wheel now' : 'the sensor is not connected: turn it to wake it';
+      timer = setInterval(function () {
+        if (Date.now() > until) return stop();
+        stats().then(function (s) {
+          var n = s.total.rotations - base;
+          out.textContent = !s.live.connected ? 'the sensor is not connected: turn it to wake it'
+            : n + (n === 1 ? ' rotation' : ' rotations') + ' · ' + s.live.rpm + ' rpm';
+        });
+      }, 1000);
     });
   });
 })();

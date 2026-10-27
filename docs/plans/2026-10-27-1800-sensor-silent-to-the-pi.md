@@ -19,5 +19,5 @@ and the package sets it. How it was found is in
 - [x] `Privacy = device` in BlueZ's `main.conf` from the package, under its own marker, removed by purge; tested on a scratch `main.conf`
 - [x] Intents, a bug case study and the troubleshooting guide; pairing documented as the alternative
 - [x] The package with the setting installed on whiskerwheel; privacy survives a Bluetooth restart and a reboot
-- [ ] Clear the test rotations from the history, or keep them (the user to decide)
-- [ ] A sensor section in the settings page: the sensors heard, cadence or speed, choosing one, mounting help per type, a live test (the user to decide)
+- [x] The test rotations stay in the history: decided
+- [x] A sensor section in the settings page: decided, planned in [2026-10-27-1920-choosing-the-sensor.md](2026-10-27-1920-choosing-the-sensor.md)

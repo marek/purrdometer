@@ -27,6 +27,7 @@ struct Editable {
     int fullRefreshEvery = 20;
     int activeRefreshS = 5;
     int idleRefreshS = 60;
+    std::optional<std::string> sensor; // a sensor's address; empty for the first one heard
 };
 
 struct Config {
@@ -51,5 +52,12 @@ std::vector<std::string> validate(const Editable& e, const WheelPresets& presets
 void saveOverrides(const Editable& e, const std::string& path = OVERRIDES_PATH);
 
 const char* accessName(SettingsAccess a);
+
+// "AA:BB:CC:DD:EE:FF", uppercase; nullopt if s is not a Bluetooth address.
+std::optional<std::string> normalizeAddress(const std::string& s);
+
+// The sensor the settings choose, for the logger, which needs nothing else from them.
+std::optional<std::string> sensorChoice(const std::string& conf = CONFIG_PATH,
+                                        const std::string& overrides = OVERRIDES_PATH);
 
 } // namespace purr

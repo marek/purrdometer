@@ -14,12 +14,13 @@ that jumped, wrapped or reset.
 | Case | Rule |
 |---|---|
 | First measurement ever | Adds nothing; it is the baseline |
-| Next measurement | Delta = current − previous crank revolutions, modulo 2¹⁶ |
+| Next measurement | Delta = current − previous revolutions, modulo the counter's range: 2¹⁶ for a cadence sensor's crank counter, 2³² for a speed sensor's wheel counter |
 | Plausibility | A delta larger than the wall-clock time since the previous measurement allows, at a fixed maximum rotation rate plus a small slack, is a reset: it adds nothing and becomes the new baseline. The maximum is a named constant in the logger, set far above any cat (5 rev/s, ~70 km/h on the G5) |
 | Counter went backwards | Modulo arithmetic makes it a huge delta, so it is a reset by the rule above |
 | Logger restarted, sensor kept counting | The previous measurement and its wall time are kept in `state` ([storage.md](storage.md)), so the delta across the gap is counted, within plausibility |
 | Rotations across a gap | Attributed to the minute of the measurement that reveals them; when within the gap they happened is unknown |
-| Wrap ambiguity | 2¹⁶ rotations (~250 km on the G5) unseen in one gap are lost; no gap is that long in practice |
+| Wrap ambiguity | 2¹⁶ rotations (~250 km on the G5) unseen in one gap are lost on a cadence sensor; no gap is that long in practice |
+| Sensor switched | The previous measurement is forgotten; the new sensor's first measurement is a new baseline |
 | Repeated measurement, no new rotation | Delta 0; rpm 0; stored only as state |
 
 ## Rate

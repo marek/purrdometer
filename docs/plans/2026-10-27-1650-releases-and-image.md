@@ -20,4 +20,4 @@ flashing. The rules are in
 - [x] `packaging/build-image.sh` and the pinned base in `packaging/image-base`; `postinst` changes nothing live in a chroot
 - [x] `.github/workflows/packages.yml`: `deb`, `image` and, on a tag, a draft release
 - [x] A manual run of the workflow builds both on GitHub's arm64 runners (about 5 minutes; the image is 526 MiB compressed, 2.76 GB unpacked, and grows on first boot)
-- [ ] The image boots on a Pi Zero 2 W, grows to the card, and Imager's OS customisation sets the user and WiFi (the user)
+- [x] Booting the image on a card: not done, by the user's decision; its contents are checked from the built image instead

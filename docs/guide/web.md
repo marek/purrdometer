@@ -22,8 +22,9 @@ your browser's light or dark setting.
 ## Settings
 
 The gear at the top right opens the settings: the wheel (a preset, or your
-measured diameter, in cm or inches) and the screen (upside down, how often it
-updates). **Save** applies them at once to the dashboard, and to the screen
+measured diameter, in cm or inches), the sensor (which one, how to mount it,
+a live test: [the sensor](sensor.md)) and the screen (upside down, how often
+it updates). **Save** applies them at once to the dashboard, and to the screen
 before its next update. **Reset to defaults** goes back to the config file.
 
 By default any device on your home network can save. To change that, set

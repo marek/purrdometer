@@ -81,9 +81,43 @@ void apply(const Ini& ini, Editable& e, std::vector<std::string>& errors)
     number("full_refresh_every", e.fullRefreshEvery, FULL_REFRESH_EVERY);
     number("active_refresh_s", e.activeRefreshS, ACTIVE_REFRESH_S);
     number("idle_refresh_s", e.idleRefreshS, IDLE_REFRESH_S);
+    if (auto v = ini.get("sensor", "address")) {
+        if (auto a = normalizeAddress(*v))
+            e.sensor = a;
+        else
+            errors.push_back("[sensor] address is not a Bluetooth address: '" + *v + "'");
+    } else if (ini.has("sensor", "address")) {
+        e.sensor.reset(); // "address =" in the overrides goes back to the first sensor heard
+    }
 }
 
 } // namespace
+
+std::optional<std::string> normalizeAddress(const std::string& s)
+{
+    if (s.size() != 17)
+        return std::nullopt;
+    std::string out;
+    for (size_t i = 0; i < s.size(); ++i) {
+        char c = char(std::toupper(static_cast<unsigned char>(s[i])));
+        bool ok = i % 3 == 2 ? c == ':' : std::isxdigit(static_cast<unsigned char>(c));
+        if (!ok)
+            return std::nullopt;
+        out += c;
+    }
+    return out;
+}
+
+std::optional<std::string> sensorChoice(const std::string& conf, const std::string& overrides)
+{
+    Editable e;
+    std::vector<std::string> ignored;
+    if (auto ini = Ini::load(conf))
+        apply(*ini, e, ignored);
+    if (auto ini = Ini::load(overrides))
+        apply(*ini, e, ignored);
+    return e.sensor;
+}
 
 const char* accessName(SettingsAccess a)
 {
@@ -113,6 +147,8 @@ std::vector<std::string> validate(const Editable& e, const WheelPresets& presets
         problems.push_back(rangeError("active_refresh_s", ACTIVE_REFRESH_S));
     if (!in(e.idleRefreshS, IDLE_REFRESH_S))
         problems.push_back(rangeError("idle_refresh_s", IDLE_REFRESH_S));
+    if (e.sensor && !normalizeAddress(*e.sensor))
+        problems.push_back("the sensor is not a Bluetooth address: " + *e.sensor);
     return problems;
 }
 
@@ -179,7 +215,9 @@ void saveOverrides(const Editable& e, const std::string& path)
             << "rotate180 = " << (e.rotate180 ? "true" : "false") << "\n"
             << "full_refresh_every = " << e.fullRefreshEvery << "\n"
             << "active_refresh_s = " << e.activeRefreshS << "\n"
-            << "idle_refresh_s = " << e.idleRefreshS << "\n";
+            << "idle_refresh_s = " << e.idleRefreshS << "\n\n"
+            << "[sensor]\n"
+            << "address = " << e.sensor.value_or("") << "\n";
         out.flush();
         if (!out)
             throw std::runtime_error("cannot write " + tmp);

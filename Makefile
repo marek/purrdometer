@@ -25,12 +25,14 @@ WEB_SRCS = src/purrdometer-web.cpp $(wildcard src/web/*.cpp) $(COMMON_SRCS)
 WEB_OBJS = $(patsubst %.cpp,$(BUILD)/%.o,$(WEB_SRCS)) $(GEN_SRCS:.cpp=.o)
 DISPLAY_SRCS = src/purrdometer-display.cpp $(wildcard src/display/*.cpp) $(COMMON_SRCS)
 DISPLAY_OBJS = $(patsubst %.cpp,$(BUILD)/%.o,$(DISPLAY_SRCS))
+LOGGER_SRCS = src/purrdometer-logger.cpp $(COMMON_SRCS)
+LOGGER_OBJS = $(patsubst %.cpp,$(BUILD)/%.o,$(LOGGER_SRCS))
 
 all: $(LOGGER) $(WEB) $(DISPLAY)
 
-$(LOGGER): src/purrdometer-logger.cpp
+$(LOGGER): $(LOGGER_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(shell pkg-config --cflags $(LOGGER_PKGS)) -o $@ $< $(shell pkg-config --libs $(LOGGER_PKGS)) -pthread
+	$(CXX) -o $@ $^ $(shell pkg-config --libs $(LOGGER_PKGS)) -pthread
 
 $(PAGEC): src/tools/pagec.cpp
 	@mkdir -p $(@D)
@@ -47,7 +49,7 @@ $(BUILD)/gen/%.o: $(BUILD)/gen/%.cpp
 # Every web object may include a generated header, so they wait for all of them.
 $(BUILD)/%.o: %.cpp | $(GEN_HDRS)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -MMD -MP $(shell pkg-config --cflags $(WEB_PKGS) $(DISPLAY_PKGS)) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -MMD -MP $(shell pkg-config --cflags $(LOGGER_PKGS) $(WEB_PKGS) $(DISPLAY_PKGS)) -c -o $@ $<
 
 $(WEB): $(WEB_OBJS)
 	@mkdir -p $(@D)
@@ -87,4 +89,4 @@ clean:
 
 .PHONY: all test preview media serve deb clean
 
--include $(WEB_OBJS:.o=.d) $(DISPLAY_OBJS:.o=.d)
+-include $(WEB_OBJS:.o=.d) $(DISPLAY_OBJS:.o=.d) $(LOGGER_OBJS:.o=.d)

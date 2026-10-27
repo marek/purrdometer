@@ -23,8 +23,8 @@ from one `.deb`. The decisions are in [data/](../intents/data/) and
 - [x] Wheel presets with the Ferris G5 at its 48" inner diameter, custom diameters in any unit, `--wheels` and `--check-config` ([data/wheels.md](../intents/data/wheels.md))
 - [x] `.deb` with both services, the config, the BlueZ and NetworkManager settings; install, upgrade, remove, purge and reinstall checked on whiskerwheel
 - [x] Rebuild and install the package with the wheel presets on whiskerwheel
-- [ ] The screen on the panel looks like the previews (the user)
-- [ ] Each tab of the touch bar opens its screen, the right way up (the user)
+- [x] The screen on the panel looks like the previews: confirmed by the user
+- [x] Each tab of the touch bar opens its screen, the right way up: confirmed by the user
 - [ ] Sensor mounted near the axle with the battery door reachable, and a spun wheel shows rotations in the log and on NOW (the user)
 - [x] The G5 preset at 121.9 cm (48"), not the measured 123.2 cm (48.5"): decided
 - [ ] How historic usage before the sensor is estimated and where it is stored, kept apart from measured rotations (the user to decide)

@@ -27,6 +27,7 @@ read. No process depends on another running.
 | `minutes(minute PK, revs)` | Rotations per wall-clock minute; `minute` = unix time ÷ 60, UTC | Forever: this is the history |
 | `samples(ts, revs, event_time, delta)` | Every measurement that added rotations, as received | 30 days, pruned at logger start |
 | `state(key PK, value)` | Live status and the counter needed to resume ([accounting.md](accounting.md)) | Overwritten in place |
+| `sensors(address PK, name, kind, rssi, last_seen)` | Every CSC sensor heard; `kind` is `cadence`, `speed` or empty until the sensor's features are read | Overwritten in place |
 | `meta(key PK, value)` | `schema_version`, `created` | Forever |
 
 ## State keys
@@ -35,6 +36,7 @@ read. No process depends on another running.
 |---|---|---|
 | `connected` | `1` while the sensor is connected | On connect and disconnect |
 | `sensor` | The sensor's address | When the sensor is chosen |
+| `sensor_kind` | `cadence` or `speed` | When its features are read |
 | `battery` | Battery percentage | Once per connection |
 | `rpm` | Latest rotation rate; `0` when disconnected | Per measurement |
 | `last_motion` | Unix time of the last measurement that added rotations | Per moving measurement |

@@ -33,10 +33,21 @@ sees half a file.
 | `[wheel] diameter` | A measured running diameter in the chosen units, or empty for the preset's |
 | `[display] rotate180` | On or off |
 | `[display] active_refresh_s`, `idle_refresh_s`, `full_refresh_every` | Whole numbers in 1–60, 10–3600 and 1–200 |
+| `[sensor] address` | A sensor's address, or empty for automatic |
 
 Every value is checked the same way the config file's are
 ([../data/wheels.md](../data/wheels.md)); a rejected save says why and writes
 nothing.
+
+### The sensor section
+
+| Part | Shows or does |
+|---|---|
+| Sensors heard | Every CSC sensor in the `sensors` table, newest first: name, address, kind, signal, when last heard, and which one is connected with its battery |
+| Choice | Automatic (the first heard) or one of the list; saved as `[sensor] address` |
+| Scan | Asks the logger for a 20-second scan by touching `/var/lib/purrdometer/scan-request`; the list fills in as it runs. Governed by the same access rule as saving |
+| Mounting | A picture and a few lines for the chosen sensor's kind: cadence or speed |
+| Test | "Turn the wheel now": a live count of rotations and rpm since the test began, read from `/api/stats` every second, with no saving involved |
 
 **Never from the web:** `[web]` (`bind`, `port`, `settings_access`,
 `settings_pin`). A page that could change who may use it, or where it
@@ -66,7 +77,7 @@ listens, could lock itself out or open itself up.
 |---|---|
 | `purrdometer-web` | On the next request: it reads both files on every request |
 | `purrdometer-display` | Before its next redraw (5 s while running, 60 s idle): it checks both files' modification times, and redraws in full on a change |
-| `purrdometer-logger` | Unaffected: it stores rotations, which no setting changes |
+| `purrdometer-logger` | Within a second for `[sensor] address`: it checks both files' modification times; nothing else it does depends on a setting |
 
 ## Proven by
 

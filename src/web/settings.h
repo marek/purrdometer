@@ -2,8 +2,10 @@
 #pragma once
 
 #include "common/config.h"
+#include "common/stats.h"
 #include "common/wheel.h"
 
+#include <ctime>
 #include <string>
 #include <vector>
 
@@ -21,6 +23,12 @@ struct SettingsView {
     bool saved = false, wasReset = false;
     std::vector<std::string> problems;     // a rejected submission
     std::vector<std::string> configErrors; // problems in the files themselves
+
+    // The sensor section.
+    std::vector<SeenSensor> sensors;   // heard by the logger, newest first
+    Live live;                         // the sensor in use, its kind and battery
+    bool scanning = false;             // a scan the page asked for is still running
+    std::time_t now = 0;
 };
 
 } // namespace purr
