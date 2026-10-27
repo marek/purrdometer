@@ -35,3 +35,13 @@ Thumbs.db
 # Various
 bin/*
 !bin/.*
+# Build outputs
+dist/
+build/
+preview/
+__pycache__/
+tmp/
+
+# Agent links made by scripts/agent-setup.sh
+.claude/*
+!.claude/settings.json

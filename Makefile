@@ -1,36 +1,32 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra
-LDFLAGS = $(shell pkg-config --cflags --libs sdbus-c++) -pthread -lstdc++fs
+CXX ?= g++
+CXXFLAGS ?= -O2 -g
+CXXFLAGS += -std=c++17 -Wall -Wextra -Isrc
 
-PAIR_TARGET = bin/pair
-PAIR_SRCS = pair.cpp
-PAIR_OBJS = $(PAIR_SRCS:.cpp=.o)
+BUILD = build
+PURR_TMP ?= $(CURDIR)/tmp
+export PURR_TMP
 
-MONITOR_TARGET = bin/monitor
-MONITOR_SRCS = monitor.cpp
-MONITOR_OBJS = $(MONITOR_SRCS:.cpp=.o)
+LOGGER = bin/purrdometer-logger
 
-TARGETS = $(PAIR_TARGET) $(MONITOR_TARGET)
-OBJS = $(PAIR_OBJS) $(MONITOR_OBJS)
+LOGGER_PKGS = sdbus-c++ sqlite3
 
+all: $(LOGGER)
 
-define build_target
-$(1): $(2)
-	mkdir -p bin
-	$(CXX) -o $$@ $$^ $(LDFLAGS)
-endef
+$(LOGGER): src/purrdometer-logger.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(shell pkg-config --cflags $(LOGGER_PKGS)) -o $@ $< $(shell pkg-config --libs $(LOGGER_PKGS)) -pthread
 
+test: all
+	@mkdir -p $(PURR_TMP)
+	$(LOGGER) --selftest
 
-all: $(TARGETS)
-
-$(eval $(call build_target,$(PAIR_TARGET),$(PAIR_OBJS)))
-$(eval $(call build_target,$(MONITOR_TARGET),$(MONITOR_OBJS)))
-
-
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# Original prototype pairing tool.
+legacy: pair.cpp
+	@mkdir -p bin
+	$(CXX) $(CXXFLAGS) $(shell pkg-config --cflags $(LOGGER_PKGS)) -o bin/pair pair.cpp $(shell pkg-config --libs $(LOGGER_PKGS)) -pthread
 
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -rf $(BUILD) $(LOGGER) bin/pair
 
-.PHONY: all clean
+.PHONY: all test legacy clean
+
