@@ -70,7 +70,7 @@ Then spin the wheel to wake the sensor. The details are in
 | Hardware | |
 |---|---|
 | Computer | Raspberry Pi Zero 2 W, Raspberry Pi OS trixie or later |
-| Screen | Waveshare 2.13" Touch e-Paper HAT (V4) |
+| Screen | Waveshare [2.13inch Touch e-Paper HAT (with case)](https://www.waveshare.com/product/raspberry-pi/displays/e-paper/2.13inch-touch-e-paper-hat-with-case.htm): 250×122, capacitive touch, a case that holds the Pi Zero |
 | Sensor | Any Bluetooth LE cycling cadence sensor (built with a Garmin one) |
 | Wheel | One of the popular brands with a preset, or any wheel with a known diameter |
 

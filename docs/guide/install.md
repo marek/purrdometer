@@ -7,7 +7,7 @@ The hardware, installing the package, and upgrading or removing it.
 | Part | Notes |
 |---|---|
 | Raspberry Pi Zero 2 W | Raspberry Pi OS trixie (64-bit) or later, on WiFi |
-| Waveshare 2.13" Touch e-Paper HAT | The V4 panel with the GT1151 touch controller. Enable SPI and I²C (`sudo raspi-config` → Interface Options) |
+| Waveshare [2.13inch Touch e-Paper HAT (with case)](https://www.waveshare.com/product/raspberry-pi/displays/e-paper/2.13inch-touch-e-paper-hat-with-case.htm) | 250×122, the V4 panel with the GT1151 touch controller; the case holds the Pi Zero behind it. The image turns SPI and I²C on; on your own install, `sudo raspi-config` → Interface Options |
 | Bluetooth LE cadence sensor | Any Cycling Speed and Cadence sensor with crank data; built against a Garmin cadence sensor |
 | Cat wheel | Presets for the Ferris Cat Wheel G5, Grand Ferris, One Fast Cat and Star Cat L and XL; any wheel works once its diameter is set ([configuration](configuration.md)) |
 
