@@ -51,6 +51,7 @@ listing them.
 | [display/touch-bar.md](display/touch-bar.md) | The tab strip: placement, hit areas, orientation, the touch controller |
 | [display/refresh.md](display/refresh.md) | When the panel redraws: partial vs full, ghosting, live updates, sleep |
 | [web/dashboard.md](web/dashboard.md) | `purrdometer-web`: the stack, routes, what the page shows, access, the service |
+| [web/settings.md](web/settings.md) | The gear page: what it changes, `settings.ini` over `/etc`, who may save (`lan`, `pin`, `open`, `off`), how changes are picked up |
 | [web/pages.md](web/pages.md) | `.page` files compiled to C++ by `pagec`: tags, escaping, formatters |
 | [bugs/supervision-timeout-drops.md](bugs/supervision-timeout-drops.md) | The link dropping every 7–16 s: a 420 ms supervision timeout on a ~200 ms interval |
 | [bugs/notify-before-services-resolved.md](bugs/notify-before-services-resolved.md) | A connected sensor that never sent data: notifications requested before GATT discovery finished |
@@ -64,7 +65,7 @@ listing them.
 - **Changing what is stored**: data/storage → data/accounting → display/screens.
 - **Changing a screen or the touch bar**: display/screens →
   display/touch-bar → display/refresh → data/wheels.
-- **Changing the web dashboard**: web/dashboard → web/pages →
+- **Changing the web dashboard or its settings**: web/dashboard → web/settings → web/pages →
   data/storage → data/wheels.
 - **Changing the package or system settings**: workspace/packaging →
   ble/link.

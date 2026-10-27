@@ -26,6 +26,7 @@ of memory, a page in tens of milliseconds. Read-only over the database
 |---|---|
 | `/` | The dashboard |
 | `/api/stats` | JSON: the wheel, totals, today, live state, every day with rotations |
+| `/settings` | The gear page ([settings.md](settings.md)); `POST /settings` saves, `POST /settings/reset` resets |
 | `/healthz` | `ok` |
 
 ## The page
@@ -47,8 +48,8 @@ the browser's light or dark preference.
 
 | Subject | Rule |
 |---|---|
-| Config | `[web] bind` (default `0.0.0.0`) and `port` (default 8080) in `purrdometer.conf`; `[wheel]` as for the display |
-| Access | No login: it is for the home network. `bind = 127.0.0.1` keeps it local |
-| Service | `purrdometer-web.service` as `purrdometer`, with a read-only system, no devices, `MemoryMax=64M`, `CPUQuota=50%` |
+| Config | `[web] bind` (default `0.0.0.0`) and `port` (default 8080) in `purrdometer.conf`; `[wheel]` as for the display; both files are read on every request, so a saved setting applies at once |
+| Access | No login: it is for the home network. `bind = 127.0.0.1` keeps it local. Saving settings has its own rule ([settings.md](settings.md)) |
+| Service | `purrdometer-web.service` as `purrdometer`, with a read-only system except its state directory (where `settings.ini` lives), no devices, `MemoryMax=64M`, `CPUQuota=50%` |
 | Errors | A failing request logs the path and the exception and answers 500; the process keeps serving |
 | Proven by | `purrdometer-web --selftest`: lengths and units, the presets, calendar arithmetic, escaping, number formats, a real database through the whole page and the JSON |

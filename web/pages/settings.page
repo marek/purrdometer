@@ -1,0 +1,102 @@
+<%# Settings: the wheel and the screen, saved to the web UI's overrides file. -%>
+<%@ include "web/settings.h" %>
+<%@ include "head.page.h" %>
+<%@ include "foot.page.h" %>
+<%@ param const purr::SettingsView& v %>
+<% using namespace purr; using namespace purr::web; -%>
+<% const auto& e = v.values; const bool inches = e.units == "in"; -%>
+<% head(out, "Settings · purrdometer", v.current.name, 0); -%>
+<% if (v.saved) { -%>
+<section class="ok">Saved. The dashboard uses it now; the screen within a minute.</section>
+<% } -%>
+<% if (v.wasReset) { -%>
+<section class="ok">Back to the defaults in <code>/etc/purrdometer/purrdometer.conf</code>.</section>
+<% } -%>
+<% for (auto& p : v.problems) { -%>
+<section class="error">Not saved: <%= p %></section>
+<% } -%>
+<% for (auto& p : v.configErrors) { -%>
+<section class="error">Config: <%= p %></section>
+<% } -%>
+<% if (!v.canSave) { -%>
+<section>
+  <strong>View only.</strong> <%= v.whyNot %>
+</section>
+<% } -%>
+
+<form method="post" action="/settings">
+<input type="hidden" name="token" value="<%= v.token %>">
+
+<section>
+  <h2>Wheel <span>· distance is rotations × the running circumference</span></h2>
+
+  <label>Units</label>
+  <div class="toggle" role="radiogroup" aria-label="Units">
+    <label><input type="radio" name="units" value="cm"<%= inches ? "" : " checked" %>><span>cm</span></label>
+    <label><input type="radio" name="units" value="in"<%= inches ? " checked" : "" %>><span>inches</span></label>
+  </div>
+  <p class="hint">How sizes are shown, and the unit of a measured diameter. Distances are always km.</p>
+
+  <label for="model">Wheel</label>
+  <select id="model" name="model">
+<% for (auto& w : v.presets->wheels) { -%>
+    <option value="<%= w.key %>" data-m="<%= fixed(w.diameterM, 4) %>"<%= w.key == e.model ? " selected" : "" %>><%= w.name %> · <%= showLength(w.diameterM, e.units).substr(0, showLength(w.diameterM, e.units).find(" (")) %><%= w.estimated ? " (estimated)" : "" %></option>
+<% } -%>
+  </select>
+
+  <label for="diameter">Measured diameter <span class="muted">(optional)</span></label>
+  <div class="row">
+    <input id="diameter" name="diameter" type="number" step="0.1" min="0" inputmode="decimal"
+           value="<%= e.diameter ? *e.diameter : "" %>" placeholder="preset">
+    <span id="unit"><%= inches ? "in" : "cm" %></span>
+  </div>
+  <p class="hint">Inside of the running track, edge to edge. Leave empty to use the wheel's published size.</p>
+  <p class="hint">Now: <%= describe(v.current, e.units) %></p>
+</section>
+
+<section>
+  <h2>Screen</h2>
+  <label><input type="checkbox" name="rotate180" value="1"<%= e.rotate180 ? " checked" : "" %>> Upside down (rotate 180°)</label>
+  <label for="active">Seconds between updates while the wheel turns</label>
+  <input id="active" name="active_refresh_s" type="number" min="1" max="60" value="<%= e.activeRefreshS %>">
+  <label for="idle">Seconds between checks while it does not</label>
+  <input id="idle" name="idle_refresh_s" type="number" min="10" max="3600" value="<%= e.idleRefreshS %>">
+  <label for="full">Fast updates between full, flashing refreshes</label>
+  <input id="full" name="full_refresh_every" type="number" min="1" max="200" value="<%= e.fullRefreshEvery %>">
+</section>
+
+<% if (v.access == SettingsAccess::Pin && v.canSave) { -%>
+<section>
+  <label for="pin">PIN</label>
+  <input id="pin" name="pin" type="password" autocomplete="current-password" required>
+</section>
+<% } -%>
+
+<div class="row">
+  <button type="submit"<%= v.canSave ? "" : " disabled" %>>Save</button>
+<% if (v.overridden) { -%>
+  <button type="submit" class="secondary" formaction="/settings/reset"<%= v.canSave ? "" : " disabled" %>
+          formnovalidate>Reset to defaults</button>
+<% } -%>
+</div>
+</form>
+
+<script>
+// Switching units converts a typed diameter and relabels the wheel sizes.
+(function () {
+  var diameter = document.getElementById('diameter'), unit = document.getElementById('unit');
+  document.querySelectorAll('input[name=units]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var toIn = r.value === 'in', v = parseFloat(diameter.value);
+      if (!isNaN(v)) diameter.value = (toIn ? v / 2.54 : v * 2.54).toFixed(1);
+      unit.textContent = toIn ? 'in' : 'cm';
+      document.querySelectorAll('#model option').forEach(function (o) {
+        var m = parseFloat(o.dataset.m), size = toIn ? (m / 0.0254).toFixed(1) + ' in' : (m * 100).toFixed(1) + ' cm';
+        o.textContent = o.textContent.replace(/ · [0-9.]+ (cm|in)/, ' · ' + size);
+      });
+    });
+  });
+})();
+</script>
+<% foot(out, "Saved to <code>/var/lib/purrdometer/settings.ini</code>, over <code>/etc/purrdometer/purrdometer.conf</code>. "
+        "Who may save is <code>[web] settings_access</code> in that file: <strong>" + std::string(accessName(v.access)) + "</strong>."); -%>

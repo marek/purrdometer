@@ -95,21 +95,35 @@ class WheelTest(unittest.TestCase):
             path = os.path.join(d, "p.conf")
             with open(path, "w") as f:
                 f.write("[wheel]\nmodel = ferris-g5\ndiameter = 120  # measured\n[display]\nrotate180 = yes\n")
-            cfg = config.load(path)
+            cfg = config.load(path, os.path.join(d, "no-overrides.ini"))
             self.assertAlmostEqual(cfg.wheel.diameter_m, 1.2)
             self.assertEqual(cfg.units, "cm")
             self.assertTrue(cfg.rotate180)
             self.assertEqual(cfg.errors, [])
             with open(path, "w") as f:
                 f.write("[wheel]\nmodel = nope\n")
-            cfg = config.load(path)
+            cfg = config.load(path, os.path.join(d, "no-overrides.ini"))
             self.assertEqual(cfg.wheel, wheels.PRESETS[wheels.DEFAULT])
             self.assertEqual(len(cfg.errors), 1)
             with open(path, "w") as f:
                 f.write("[wheel]\nunits = in\ndiameter = 48.5\n")
-            cfg = config.load(path)
+            cfg = config.load(path, os.path.join(d, "no-overrides.ini"))
             self.assertAlmostEqual(cfg.wheel.diameter_m, 48.5 * wheels.INCH)
             self.assertEqual(cfg.errors, [])
+
+
+class OverridesTest(unittest.TestCase):
+    def test_the_web_ui_settings_win_over_the_config_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            conf, over = os.path.join(d, "p.conf"), os.path.join(d, "settings.ini")
+            with open(conf, "w") as f:
+                f.write("[wheel]\nunits = in\nmodel = one-fast-cat\ndiameter = 43.5\n[display]\nrotate180 = no\n")
+            with open(over, "w") as f:
+                f.write("[wheel]\nunits = cm\nmodel = grand-ferris\ndiameter =\n[display]\nrotate180 = true\n")
+            cfg = config.load(conf, over)
+            self.assertEqual(cfg.units, "cm")
+            self.assertEqual(cfg.wheel, wheels.PRESETS["grand-ferris"])  # the empty diameter clears the measured one
+            self.assertTrue(cfg.rotate180)
 
 
 class RenderTest(unittest.TestCase):

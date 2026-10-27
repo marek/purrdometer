@@ -19,7 +19,7 @@ and never flashes or wears the panel when nothing changed.
 | Idle | The data is re-read every `idle_refresh_s` (60 s); a redraw happens only if the picture changed (the day rolled over, the sensor connected) |
 | Tab tap | Redraws at once with a partial refresh |
 | Sleep | After a minute without an update the panel goes into deep sleep; its image stays. The next update wakes it with a full refresh |
-| Settings | `[display]` in the config ([../../guide/configuration.md](../../guide/configuration.md)) |
+| Settings | `[display]` in the config ([../../guide/configuration.md](../../guide/configuration.md)), or from the dashboard's gear ([../web/settings.md](../web/settings.md)); a change is picked up before the next redraw, which is then a full one |
 
 ## Why
 

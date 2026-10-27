@@ -16,7 +16,7 @@ because only rotations are stored ([storage.md](storage.md)).
 | Distance | rotations × π × running diameter |
 | Speed | rpm × π × running diameter × 60 ÷ 1000 km/h |
 | Running diameter | The diameter of the surface the cat runs on: the inside of the track. A wheel's outer size is not used |
-| Config | `[wheel] model = <key>`; `[wheel] diameter = <length>` overrides the model's diameter; `[wheel] units` ([../../guide/configuration.md](../../guide/configuration.md)) |
+| Config | From the dashboard's gear ([../web/settings.md](../web/settings.md)) or the config file: `[wheel] model = <key>`; `[wheel] diameter = <length>` overrides the model's diameter; `[wheel] units` ([../../guide/configuration.md](../../guide/configuration.md)) |
 | Default | `ferris-g5` when nothing is set |
 | Units setting | `[wheel] units = cm` (default) or `in`: the unit a bare `diameter` number is in, and the unit every wheel size is shown in first (`--wheels`, `--check-config`, the web page). Distances are always km |
 | Units in a value | `cm`, `mm`, `m`, `in`, `inch`, `inches`, `"`; an explicit unit always wins over the setting. With no unit and no setting in play (the presets file), a bare number is an error |

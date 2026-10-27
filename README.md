@@ -47,7 +47,7 @@ and a page in tens of milliseconds, even on a Pi Zero.
 - Every rotation logged to SQLite, including ones made while the logger was down: [the sensor](docs/guide/sensor.md)
 - Distance from the wheel's running diameter, with presets for a variety of popular brands or a custom diameter in cm or inches, and history recomputed when it changes: [configuration](docs/guide/configuration.md)
 - NOW, 30 DAYS, CALENDAR and ALL TIME screens on a 2.13" touch e-paper HAT: [screens](docs/guide/screens.md)
-- A web dashboard and JSON API on the home network: [web](docs/guide/web.md)
+- A web dashboard, its settings behind a gear, and a JSON API on the home network: [web](docs/guide/web.md)
 - A Bluetooth link that rides out the Pi Zero 2 W's shared WiFi/Bluetooth radio: [troubleshooting](docs/guide/troubleshooting.md#a-sensor-that-keeps-dropping)
 - One `.deb` that installs everything and configures the system: [install](docs/guide/install.md)
 

@@ -48,6 +48,13 @@ public:
         return k->second;
     }
 
+    // True for a key present but empty ("diameter =").
+    bool has(const std::string& section, const std::string& key) const
+    {
+        auto s = sections_.find(section);
+        return s != sections_.end() && s->second.count(key);
+    }
+
     const std::vector<std::string>& sections() const { return order_; }
 
 private:

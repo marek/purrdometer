@@ -1,0 +1,69 @@
+<%# The top of every page: document head, shared styles, the header with the gear. -%>
+<%@ param const std::string& title %>
+<%@ param const std::string& subtitle %>
+<%@ param int refreshSeconds %>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<% if (refreshSeconds > 0) { -%>
+<meta http-equiv="refresh" content="<%= refreshSeconds %>">
+<% } -%>
+<title><%= title %></title>
+<style>
+:root { --fg: #1b1b1b; --muted: #6b6b6b; --bg: #faf8f5; --card: #fff; --line: #e6e1da;
+        --c1: #f3d9b1; --c2: #e9b36b; --c3: #d9822b; --c4: #a8551a; --bad: #b3261e; --good: #2e7d32; }
+@media (prefers-color-scheme: dark) {
+  :root { --fg: #eee; --muted: #9a9a9a; --bg: #161514; --card: #201f1d; --line: #33312e;
+          --c1: #4a3520; --c2: #7a4d22; --c3: #b56a25; --c4: #e89140; --bad: #f2b8b5; --good: #a5d6a7; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+main { max-width: 860px; margin: 0 auto; padding: 20px 16px 40px; }
+header { display: flex; align-items: center; justify-content: space-between; margin: 0 0 16px; }
+header h1 { font-size: 20px; margin: 0; }
+header h1 a { color: inherit; text-decoration: none; }
+header small, .muted { color: var(--muted); font-weight: normal; }
+.gear { color: var(--muted); display: inline-flex; padding: 6px; border-radius: 8px; }
+.gear:hover, .gear.here { color: var(--fg); background: var(--card); }
+h2 { font-size: 15px; margin: 0 0 10px; }
+h2 span { color: var(--muted); font-weight: normal; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.card, section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+section { margin-bottom: 12px; }
+.label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.big { font-size: 30px; font-weight: 700; }
+.running { color: var(--c3); }
+.error { border-color: var(--bad); color: var(--bad); }
+.ok { border-color: var(--good); color: var(--good); }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--muted); font-size: 11px; }
+.bar { fill: var(--c3); } .bar.today { fill: var(--c2); } .cum { fill: none; stroke: var(--fg); stroke-width: 2; }
+.l0 { fill: var(--line); } .l1 { fill: var(--c1); } .l2 { fill: var(--c2); } .l3 { fill: var(--c3); } .l4 { fill: var(--c4); }
+.todaycell { stroke: var(--fg); stroke-width: 1.5; }
+a { color: var(--c3); }
+label { display: block; margin: 10px 0 4px; font-weight: 600; }
+.hint { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+input[type=number], input[type=text], input[type=password], select {
+  font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+input[type=number] { width: 8em; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.toggle label { margin: 0; padding: 6px 12px; font-weight: normal; cursor: pointer; }
+.toggle input { display: none; }
+.toggle input:checked + span { font-weight: 700; color: var(--c3); }
+button { font: inherit; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--c3); background: var(--c3); color: #fff; cursor: pointer; }
+button.secondary { background: transparent; color: var(--fg); border-color: var(--line); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+footer { color: var(--muted); font-size: 13px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1><a href="/">purrdometer</a> <small>· <%= subtitle %></small></h1>
+  <a class="gear<%= title.starts_with("Settings") ? " here" : "" %>" href="/settings" title="Settings" aria-label="Settings">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </a>
+</header>

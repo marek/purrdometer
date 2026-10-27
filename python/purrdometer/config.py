@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from . import wheels
 
 DEFAULT_PATH = "/etc/purrdometer/purrdometer.conf"
+OVERRIDES_PATH = "/var/lib/purrdometer/settings.ini"  # written by the web UI, wins over DEFAULT_PATH
 
 log = logging.getLogger(__name__)
 
@@ -25,10 +26,10 @@ class Config:
     errors: list[str] = field(default_factory=list)
 
 
-def load(path: str = DEFAULT_PATH) -> Config:
+def load(path: str = DEFAULT_PATH, overrides: str = OVERRIDES_PATH) -> Config:
     cfg = Config()
     p = configparser.ConfigParser(inline_comment_prefixes=("#", ";"))
-    if not p.read(path):
+    if not p.read([path, overrides]):
         return cfg
     units = p.get("wheel", "units", fallback=wheels.DEFAULT_UNITS).strip().lower()
     if units in wheels.DISPLAY_UNITS:

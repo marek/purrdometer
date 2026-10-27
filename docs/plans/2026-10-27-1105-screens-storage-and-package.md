@@ -28,4 +28,4 @@ from one `.deb`. The decisions are in [data/](../intents/data/) and
 - [ ] Sensor mounted near the axle with the battery door reachable, and a spun wheel shows rotations in the log and on NOW (the user)
 - [x] The G5 preset at 121.9 cm (48"), not the measured 123.2 cm (48.5"): decided
 - [ ] How historic usage before the sensor is estimated and where it is stored, kept apart from measured rotations (the user to decide)
-- [ ] `apt full-upgrade` on whiskerwheel: newer bluez, bluez-firmware and kernel (the user to decide)
+- [x] whiskerwheel updated and upgraded to trixie: decided, done in [2026-10-27-1420-cpp26-trixie-and-web-settings.md](2026-10-27-1420-cpp26-trixie-and-web-settings.md)

@@ -1,0 +1,6 @@
+<%# The bottom of every page. -%>
+<%@ param const std::string& note %>
+<footer><%== note %></footer>
+</main>
+</body>
+</html>

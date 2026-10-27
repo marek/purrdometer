@@ -19,6 +19,27 @@ Hover a bar or a square for its date and distance. The page refreshes itself:
 every 5 seconds while the wheel turns, every 30 seconds otherwise. It follows
 your browser's light or dark setting.
 
+## Settings
+
+The gear at the top right opens the settings: the wheel (a preset, or your
+measured diameter, in cm or inches) and the screen (upside down, how often it
+updates). **Save** applies them at once to the dashboard, and to the screen
+before its next update. **Reset to defaults** goes back to the config file.
+
+By default any device on your home network can save. To change that, set
+`settings_access` in `/etc/purrdometer/purrdometer.conf`:
+
+| `settings_access` | Who can save |
+|---|---|
+| `lan` | Any device on the home network (the default) |
+| `pin` | Anyone who types `settings_pin` |
+| `open` | Anyone who can reach the page |
+| `off` | Nobody; edit the config file instead |
+
+Everyone can still look at the settings page. Where the page may not save, it
+says why. The network settings (`bind`, `port`) and the access rule itself are
+only in the config file.
+
 ## JSON
 
 `http://whiskerwheel:8080/api/stats` has the same numbers for scripts: the
@@ -30,8 +51,10 @@ In `/etc/purrdometer/purrdometer.conf`:
 
 ```ini
 [web]
-bind = 0.0.0.0     # 127.0.0.1 to allow only the Pi itself
+bind = 0.0.0.0          # 127.0.0.1 to allow only the Pi itself
 port = 8080
+settings_access = lan   # lan, pin, open or off
+#settings_pin = 2468
 ```
 
 Then `sudo systemctl restart purrdometer-web`. The dashboard has no login, so

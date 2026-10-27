@@ -1,7 +1,9 @@
 # Configuration
 
-Everything is in `/etc/purrdometer/purrdometer.conf`. After editing it,
-check it and restart the screen and the dashboard:
+The easiest way is the gear on the [web dashboard](web.md#settings). Everything
+can also be set in `/etc/purrdometer/purrdometer.conf`; what the gear saves goes
+to `/var/lib/purrdometer/settings.ini` and wins over that file. After editing
+the config file, check it and restart the screen and the dashboard:
 
 ```sh
 purrdometer-display --check-config
@@ -78,6 +80,8 @@ idle_refresh_s = 60        # seconds between checks while it does not
 [web]
 bind = 0.0.0.0             # 127.0.0.1 to allow only the Pi itself
 port = 8080
+settings_access = lan      # who may save from the gear: lan, pin, open or off
+#settings_pin = 2468       # for settings_access = pin
 ```
 
 See [the web dashboard](web.md).

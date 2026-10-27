@@ -24,10 +24,12 @@ log = logging.getLogger("purrdometer")
 
 
 class App:
-    def __init__(self, cfg: config_mod.Config):
+    def __init__(self, cfg: config_mod.Config, config_paths: tuple[str, str]):
         from . import hw  # hardware imports only when actually driving the panel
 
         self.cfg = cfg
+        self.config_paths = config_paths
+        self.config_stamp = self._stamp()
         self.taps: queue.Queue[tuple[int, int]] = queue.Queue()
         self.epd = hw.EPaper(rotate180=cfg.rotate180)
         self.touch = hw.Touch(lambda x, y: self.taps.put((x, y)), rotate180=cfg.rotate180)
@@ -50,7 +52,25 @@ class App:
         self.last_image = img
         self.last_update = now
 
+    def _stamp(self) -> tuple:
+        return tuple(os.stat(p).st_mtime_ns if os.path.exists(p) else None for p in self.config_paths)
+
+    def reload_if_changed(self) -> None:
+        """Pick up a change from the web UI or a hand edit without a restart."""
+        stamp = self._stamp()
+        if stamp == self.config_stamp:
+            return
+        self.config_stamp = stamp
+        db = self.cfg.db
+        self.cfg = config_mod.load(*self.config_paths)
+        self.cfg.db = db
+        self.epd.rotate180 = self.touch.rotate180 = self.cfg.rotate180
+        self.last_image = None  # redraw in full: the wheel or the orientation may have changed
+        self.partials = self.cfg.full_refresh_every
+        log.info("config reloaded: %s", wheels.describe(self.cfg.wheel, self.cfg.units))
+
     def frame(self):
+        self.reload_if_changed()
         stats = data.load(self.cfg.db, self.cfg.wheel.circumference_m)
         return render.render(stats, self.view), stats
 
@@ -97,6 +117,7 @@ def preview(cfg: config_mod.Config, out_dir: str, scale: int = 3) -> None:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="purrdometer-display")
     ap.add_argument("--config", default=config_mod.DEFAULT_PATH)
+    ap.add_argument("--overrides", default=config_mod.OVERRIDES_PATH, help="the web UI's settings file")
     ap.add_argument("--db", help="override database path")
     ap.add_argument("--preview", metavar="DIR", help="render every view to PNGs and exit (no hardware)")
     ap.add_argument("--demo-db", metavar="PATH", help="create a fake-history database at PATH and use it")
@@ -106,7 +127,7 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s %(message)s")
 
-    cfg = config_mod.load(args.config)
+    cfg = config_mod.load(args.config, args.overrides)
     if args.wheels:
         for key, w in wheels.PRESETS.items():
             print(f"{key:12} {wheels.describe(w, cfg.units)}")
@@ -125,7 +146,7 @@ def main(argv=None) -> int:
         preview(cfg, args.preview)
         return 0
 
-    app = App(cfg)
+    app = App(cfg, (args.config, args.overrides))
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     try:
         app.run()
