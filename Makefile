@@ -19,6 +19,17 @@ $(LOGGER): src/purrdometer-logger.cpp
 test: all
 	@mkdir -p $(PURR_TMP)
 	$(LOGGER) --selftest
+	cd python && PURR_WHEELS=../data/wheels.ini python3 -m unittest discover -s tests -t . -v
+
+# Render every e-paper screen from a fake-history database into preview/ (no hardware needed).
+preview:
+	@mkdir -p $(PURR_TMP)
+	cd python && PURR_WHEELS=../data/wheels.ini python3 -m purrdometer.display --demo-db $(PURR_TMP)/demo.db --preview ../preview
+
+# The same renders, for the README.
+media:
+	@mkdir -p $(PURR_TMP)
+	cd python && PURR_WHEELS=../data/wheels.ini python3 -m purrdometer.display --demo-db $(PURR_TMP)/demo.db --preview ../docs/media
 
 # Original prototype pairing tool.
 legacy: pair.cpp
@@ -28,5 +39,5 @@ legacy: pair.cpp
 clean:
 	rm -rf $(BUILD) $(LOGGER) bin/pair
 
-.PHONY: all test legacy clean
+.PHONY: all test preview media legacy clean
 
