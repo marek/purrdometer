@@ -30,6 +30,10 @@ unblock_bluetooth() {
     done
 }
 
+# In a chroot (building an image) there is no running system to change:
+# the setting files are written, and the first boot does the rest.
+in_chroot() { systemd-detect-virt --chroot >/dev/null 2>&1; }
+
 if [ "$1" = configure ]; then
     if ! getent passwd purrdometer >/dev/null; then
         adduser --system --group --home /var/lib/purrdometer \
@@ -37,12 +41,16 @@ if [ "$1" = configure ]; then
     fi
     install -d -o purrdometer -g purrdometer -m 0755 /var/lib/purrdometer
     configure_bluez
-    unblock_bluetooth
+    in_chroot || unblock_bluetooth
     # NetworkManager applies the powersave conf on the next connection; apply it now too.
-    if command -v iwconfig >/dev/null 2>&1; then iwconfig wlan0 power off 2>/dev/null || true
-    elif [ -x /usr/sbin/iwconfig ]; then /usr/sbin/iwconfig wlan0 power off 2>/dev/null || true; fi
-    systemctl daemon-reload
+    if ! in_chroot; then
+        if command -v iwconfig >/dev/null 2>&1; then iwconfig wlan0 power off 2>/dev/null || true
+        elif [ -x /usr/sbin/iwconfig ]; then /usr/sbin/iwconfig wlan0 power off 2>/dev/null || true; fi
+    fi
     systemctl enable purrdometer-logger.service purrdometer-display.service purrdometer-web.service >/dev/null 2>&1
-    systemctl restart purrdometer-logger.service purrdometer-display.service purrdometer-web.service || true
+    if ! in_chroot; then
+        systemctl daemon-reload
+        systemctl restart purrdometer-logger.service purrdometer-display.service purrdometer-web.service || true
+    fi
 fi
 exit 0

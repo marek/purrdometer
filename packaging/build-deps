@@ -1,0 +1,17 @@
+# Debian trixie packages needed to build, test and package purrdometer.
+# Read by packaging/Containerfile and .github/workflows/packages.yml; the one list.
+build-essential
+pkg-config
+dpkg-dev
+file
+git
+ca-certificates
+libsdbus-c++-dev
+libsqlite3-dev
+libcpp-httplib-dev
+nlohmann-json3-dev
+libfreetype-dev
+libharfbuzz-dev
+libgpiod-dev
+libpng-dev
+fonts-dejavu-core

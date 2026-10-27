@@ -1,29 +1,22 @@
 #!/bin/bash
-# Build the purrdometer .deb. Run on the target architecture (the Pi, arm64):
+# Build the purrdometer .deb. Run on the target architecture (arm64): in
+# packaging/build-in-container.sh, in the release workflow, or on the Pi.
 #
-#   packaging/build-deb.sh            # dev build: VERSION+git<timestamp>.<sha>
-#   RELEASE=1 packaging/build-deb.sh  # release build: exactly VERSION
+#   packaging/build-deb.sh
 #
-# Output: dist/purrdometer_<version>_<arch>.deb
+# The version is the git tag (tools/version.sh). Output: dist/purrdometer_<version>_<arch>.deb
 # Install: sudo apt install ./dist/purrdometer_<version>_<arch>.deb
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 
-VERSION=$(tr -d '[:space:]' < VERSION)
-if [[ ${RELEASE:-0} != 1 ]] && git rev-parse --git-dir >/dev/null 2>&1; then
-    sha=$(git rev-parse --short HEAD 2>/dev/null || echo nogit)
-    git diff --quiet HEAD 2>/dev/null || sha="$sha.dirty"
-    VERSION="$VERSION+git$(date -u +%Y%m%d%H%M%S).$sha"
-fi
+VERSION=$(tools/version.sh)
 ARCH=$(dpkg --print-architecture)
 PKG=purrdometer
 OUT="$ROOT/dist/${PKG}_${VERSION}_${ARCH}.deb"
 
 echo "== build + test"
-# A release builds from scratch; a dev build reuses what make already built.
-[[ ${RELEASE:-0} == 1 ]] && make clean
 make all
 make test
 

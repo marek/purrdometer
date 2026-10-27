@@ -1,11 +1,10 @@
 # Build environment matching the Pi: Debian trixie, arm64.
 # Used by packaging/build-in-container.sh; the Pi itself needs none of this.
 FROM docker.io/library/debian:trixie
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        build-essential pkg-config dpkg-dev file ca-certificates git \
-        libsdbus-c++-dev libsqlite3-dev libcpp-httplib-dev nlohmann-json3-dev \
-        libfreetype-dev libharfbuzz-dev libgpiod-dev libpng-dev fonts-dejavu-core \
+COPY build-deps /tmp/build-deps
+RUN apt-get update && grep -v '^#' /tmp/build-deps | xargs env DEBIAN_FRONTEND=noninteractive \
+        apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 # The checkout is mounted from the host, owned by another user.
-RUN git config --system --add safe.directory /src
+RUN git config --system --add safe.directory '*'
 WORKDIR /src

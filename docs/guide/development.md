@@ -75,8 +75,16 @@ for the README.
 The testing venues, including the checks on the Pi itself, are in
 [workspace/build-and-run.md](../intents/workspace/build-and-run.md).
 
-## Versions
+## Versions and releases
 
-`VERSION` holds the release version. `RELEASE=1 packaging/build-deb.sh` builds
-exactly it; a plain build appends `+git<timestamp>.<sha>`, so every dev build
-installs over the one before.
+The version is the git tag (`tools/version.sh`): a commit tagged `v1.2.0` is
+1.2.0, a commit past it is `1.2.0.r<commits>.g<hash>`, so every build after a
+release installs over it.
+
+Pushing a `v*` tag builds the `.deb` and the Raspberry Pi image on GitHub and
+drafts a release with both (`.github/workflows/packages.yml`). The image can
+also be built locally, as root on an arm64 Linux machine:
+
+```sh
+sudo packaging/build-image.sh dist/purrdometer_*_arm64.deb
+```

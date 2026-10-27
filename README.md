@@ -55,12 +55,16 @@ and a page in tens of milliseconds, even on a Pi Zero.
 
 On a Raspberry Pi Zero 2 W with the Waveshare 2.13" Touch e-Paper HAT:
 
+Flash the Raspberry Pi image from the
+[latest release](https://github.com/marek/purrdometer/releases/latest) with
+Raspberry Pi Imager (set the user and WiFi in its OS customisation), or install
+the `.deb` on a Pi running Raspberry Pi OS trixie:
+
 ```sh
-packaging/build-deb.sh
-sudo apt install ./dist/purrdometer_*_arm64.deb
+sudo apt install ./purrdometer_*_arm64.deb
 ```
 
-Then spin the wheel to wake the sensor. Dependencies and the details are in
+Then spin the wheel to wake the sensor. The details are in
 [install](docs/guide/install.md).
 
 | Hardware | |

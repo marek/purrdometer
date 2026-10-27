@@ -22,3 +22,5 @@ the rest can be worked.
 | [2026-10-27-1236-wheel-presets-and-web-dashboard.md](2026-10-27-1236-wheel-presets-and-web-dashboard.md) | Presets for the Ferris, Grand Ferris, One Fast Cat and Star Cat wheels from one shared file; a C++ web dashboard with pages compiled to C++ | 9 | 1 |
 | [2026-10-27-1420-cpp26-trixie-and-web-settings.md](2026-10-27-1420-cpp26-trixie-and-web-settings.md) | C++26 on Raspberry Pi OS trixie, builds in a trixie container, and the dashboard's gear page for the wheel and screen settings | 9 | 1 |
 | [2026-10-27-1615-display-in-cpp.md](2026-10-27-1615-display-in-cpp.md) | The e-paper display ported to C++, proven pixel by pixel against the Python version, and Python removed | 8 | 1 |
+| [2026-10-27-1650-releases-and-image.md](2026-10-27-1650-releases-and-image.md) | Releases from a `v*` tag on GitHub's arm64 runners: the `.deb` and a shrunk, compressed Raspberry Pi OS Lite image with it installed | 5 | 1 |
+| [2026-10-27-1705-setup-hotspot.md](2026-10-27-1705-setup-hotspot.md) | A setup hotspot with a per-device password shown on the e-paper, and a setup page for WiFi, the login password and the wheel | 0 | 10 |
