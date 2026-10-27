@@ -37,7 +37,7 @@ docs that hold what was decided so it is not decided again.
 
 ## Does not
 
-- Write or change C++ logger code, Python display code, the Makefile
+- Write or change C++ code, the Makefile
   or packaging.
 - Fill an intent doc by describing what the code happens to do.
 - Label something the user asked for as optional or later.

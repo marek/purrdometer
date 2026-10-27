@@ -32,19 +32,11 @@ trap 'rm -rf "$STAGE"' EXIT
 chmod 755 "$STAGE"
 
 echo "== stage"
-for bin in purrdometer-logger purrdometer-web; do
+for bin in purrdometer-logger purrdometer-web purrdometer-display; do
     install -D -m 755 "bin/$bin" "$STAGE/usr/bin/$bin"
     strip --strip-unneeded "$STAGE/usr/bin/$bin"
 done
 install -D -m 644 data/wheels.ini "$STAGE/usr/share/purrdometer/wheels.ini"
-
-install -d "$STAGE/usr/lib/purrdometer"
-(cd python && find purrdometer -name '*.py' -exec install -D -m 644 {} "$STAGE/usr/lib/purrdometer/{}" \;)
-cat > "$STAGE/usr/bin/purrdometer-display" <<'EOF'
-#!/bin/sh
-PYTHONPATH=/usr/lib/purrdometer${PYTHONPATH:+:$PYTHONPATH} exec python3 -m purrdometer.display "$@"
-EOF
-chmod 755 "$STAGE/usr/bin/purrdometer-display"
 install -D -m 755 system/btdiag.sh "$STAGE/usr/sbin/purrdometer-btdiag"
 
 install -D -m 644 packaging/systemd/purrdometer-logger.service "$STAGE/lib/systemd/system/purrdometer-logger.service"
@@ -67,7 +59,7 @@ SHLIBS=$(
     tmp=$(mktemp -d)
     mkdir "$tmp/debian"
     printf 'Source: %s\n\nPackage: %s\nArchitecture: any\n' "$PKG" "$PKG" > "$tmp/debian/control"
-    (cd "$tmp" && dpkg-shlibdeps -O "$STAGE/usr/bin/purrdometer-logger" "$STAGE/usr/bin/purrdometer-web" 2>/dev/null) | sed -n 's/^shlibs:Depends=//p'
+    (cd "$tmp" && dpkg-shlibdeps -O "$STAGE"/usr/bin/purrdometer-* 2>/dev/null) | sed -n 's/^shlibs:Depends=//p'
     rm -rf "$tmp"
 )
 [[ -n $SHLIBS ]] || { echo "dpkg-shlibdeps found no libraries" >&2; exit 1; }

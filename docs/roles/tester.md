@@ -22,10 +22,10 @@ under test.
 ## Does
 
 - Chooses the venue that can actually show the behaviour: `make test`
-  for logger and Python unit logic, `make preview` and a look at the
+  for each program's logic, `make preview` and a look at the
   PNGs for display layout, an on-device check on whiskerwheel for BLE
   and real display behaviour.
-- Writes a new `--selftest` case or Python unittest when the behaviour
+- Writes a new `--selftest` case when the behaviour
   has none and the test can be written without hardware.
 - Treats a bug the user reported as real and reproduces it from their
   description; does not ask them to reproduce it again.

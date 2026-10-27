@@ -4,7 +4,7 @@ INTENT: docs/intents/
 
 Rules and heuristics for AI agents working on purrdometer: a cat-wheel
 odometer on a Raspberry Pi Zero 2 W. A C++26 BlueZ client logs a Bluetooth LE
-cadence sensor's rotations to SQLite; a Python program shows them on a 2.13"
+cadence sensor's rotations to SQLite; a C++26 program shows them on a 2.13"
 touch e-paper HAT; a C++26 web server (cpp-httplib, `.page` templates
 compiled to C++) shows them in a browser; a `.deb` installs all three and
 configures the system. No PHP, under any circumstances. Re-read
@@ -26,8 +26,8 @@ Three co-equal artifacts; each keeps the others honest.
 | Strand | Where | What |
 |---|---|---|
 | **Intent** | `docs/intents/` | Normative design specs. The end-state contract: what purrdometer *is*, why, and the invariants the running code depends on. |
-| **Tests** | `make test` (`purrdometer-logger --selftest`, `purrdometer-web --selftest`, `python/tests/`), `make preview`, `make serve` | The logger's accounting and storage self-test, the web server's self-test, the display's unit tests, every screen rendered to PNG and the dashboard served from made-up history; see Testing venues below. |
-| **Implementation** | `src/`, `web/pages/`, `python/purrdometer/`, `data/`, `packaging/`, `system/` | The logger, the web dashboard and its templates, the display, the wheel presets, the package. |
+| **Tests** | `make test` (`--selftest` of the logger, the web server and the display), `make preview`, `make serve` | The three programs' self-tests, every screen rendered to PNG and the dashboard served from made-up history; see Testing venues below. |
+| **Implementation** | `src/`, `web/pages/`, `data/`, `packaging/`, `system/` | The logger, the display, the web dashboard and its pages, the wheel presets, the package. |
 
 `docs/intents/` is a **first-class artifact, not supplementary docs**. When
 the spec and the code disagree, one of them drifted. Your job is to figure
@@ -137,7 +137,7 @@ pictures no longer show them, `make media` remakes them.
 
 | Venue | Command | When |
 |---|---|---|
-| **Unit** | `make test` | Before each commit of code: the logger's and the web server's `--selftest` and `python/tests`. |
+| **Unit** | `make test` | Before each commit of code: the `--selftest` of all three programs. |
 | **Screens** | `make preview`, then look at `preview/*.png` | Any change to what is drawn. Looking is the test: a render that runs is not a render that reads. |
 | **Web page** | `make serve`, then open `http://whiskerwheel:8081/` (or screenshot it headless) | Any change to a template or the dashboard. |
 | **Package** | `make deb`, then `sudo apt install ./dist/…` on whiskerwheel | Any change to `packaging/`, units or maintainer scripts. Install, upgrade, remove, purge and reinstall are each checked when the scripts change. |
@@ -208,7 +208,7 @@ them into `.claude/skills`.
 | `writing-context` | Before writing a plan's Context, an intent's requirement, a commit body or a brief for another agent: the goal and its constraints in plain words, never a transcript of the session. |
 | `incremental-commits` | Before any `git commit` in this repo. |
 | `intent-docs` | Before writing or editing anything under `docs/intents/`. |
-| `code-style` | Comments, doc prose, naming, C++26, page and Python conventions. |
+| `code-style` | Comments, doc prose, naming, C++26 and page conventions. |
 | `verification` | Before reporting any fix or feature complete; before and after any test run. |
 | `scratch-space` | Before creating any temporary file, download or clone: everything goes under the git-ignored `tmp/` here. |
 | `debugging-discipline` | A repeated bug report, a dropped link, a timing bug, a failure that looks like a regression. |

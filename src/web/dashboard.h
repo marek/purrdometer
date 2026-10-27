@@ -3,7 +3,7 @@
 
 #include "common/calendar.h"
 #include "common/wheel.h"
-#include "web/stats.h"
+#include "common/stats.h"
 
 #include <ctime>
 #include <optional>

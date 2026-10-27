@@ -24,7 +24,7 @@ and code agreeing with each other.
 - Updates the intent doc when the change settles or alters a contract,
   before or with the code.
 - Adds or extends a test so the change is covered: a `--selftest` case
-  for logger logic, a Python unittest for display logic, a `make
+  for logger, display or web logic, a `make
   preview` check for layout.
 - Writes C++26 in the tree's conventions (`code-style` skill):
   sdbus-c++ proxies for BLE, `std::unique_ptr` for ownership, named
@@ -41,7 +41,7 @@ and code agreeing with each other.
 - Declare its own work tested beyond what it ran; an independent check
   is the tester's.
 - Leave debug prints, temporary commands or stale test fixtures.
-- Edit third-party library code (`sdbus-c++`, `sqlite3`, Pillow).
+- Edit third-party library code (`sdbus-c++`, `sqlite3`, FreeType, cpp-httplib).
 - Push anything.
 - Stop at a phase boundary to ask whether to continue.
 

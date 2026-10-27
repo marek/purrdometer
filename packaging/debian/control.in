@@ -3,7 +3,7 @@ Version: @VERSION@
 Architecture: @ARCH@
 Maintainer: Marek Kudlacz <marek@kudlacz.com>
 Installed-Size: @SIZE@
-Depends: @SHLIBS@, bluez (>= 5.50), adduser, python3 (>= 3.9), python3-pil, python3-spidev, python3-smbus2, python3-gpiozero, python3-lgpio, fonts-dejavu-core
+Depends: @SHLIBS@, bluez (>= 5.50), adduser, fonts-dejavu-core
 Recommends: network-manager, sqlite3
 Section: misc
 Priority: optional

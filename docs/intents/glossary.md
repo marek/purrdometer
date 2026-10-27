@@ -17,7 +17,7 @@ narrower one here, the narrower one is given.
 | **Supervision timeout** | How long a BLE link may go without a received packet before it is declared lost; 6 s here ([ble/link.md](ble/link.md)) |
 | **Coexistence** | The Pi's one radio and antenna time-shared between WiFi and BLE ([ble/link.md](ble/link.md)) |
 | **Logger** | `purrdometer-logger`, the C++ BlueZ client that writes the database |
-| **Display** | `purrdometer-display`, the Python program that draws the screens and reads the touch bar |
+| **Display** | `purrdometer-display`, the C++ program that draws the screens and reads the touch bar |
 | **Web dashboard** | `purrdometer-web`, the C++ server for the same history in a browser ([web/dashboard.md](web/dashboard.md)) |
 | **Gear page, settings.ini** | The dashboard's settings page and the file it saves to, which wins over `/etc/purrdometer/purrdometer.conf` ([web/settings.md](web/settings.md)) |
 | **Page, pagec** | A `.page` file, HTML with C++ in `<% %>` tags, and the compiler that turns it into a C++ function ([web/pages.md](web/pages.md)) |

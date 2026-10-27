@@ -1,4 +1,4 @@
-#include "web/stats.h"
+#include "common/stats.h"
 
 #include <sqlite3.h>
 

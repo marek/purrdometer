@@ -28,12 +28,11 @@ exactly as they run it, start to finish, its whole output kept in
 What it is not:
 
 - **Not the pieces.** Reading the Makefile and re-running its steps
-  one by one, or a nearby command (`make` for `make test`, a single
-  Python import for the full test suite), runs in a different
-  environment and finds nothing: incremental builds have no work to do,
-  a Python syntax error surfaces only at import time.
+  one by one, or a nearby command (`make` for `make test`, one
+  program's `--selftest` for the full suite), runs in a different
+  environment and finds nothing: incremental builds have no work to do.
 - **Not a summary.** An exit code or a `grep -c FAIL` is not reading
-  the output; a Python traceback or a selftest assertion message passes
+  the output; a compiler error or a selftest FAIL line passes
   straight through such a filter.
 - **Not a guess.** Theories about what the command might hit come after
   its output, from it.

@@ -18,13 +18,13 @@ because only rotations are stored ([storage.md](storage.md)).
 | Running diameter | The diameter of the surface the cat runs on: the inside of the track. A wheel's outer size is not used |
 | Config | From the dashboard's gear ([../web/settings.md](../web/settings.md)) or the config file: `[wheel] model = <key>`; `[wheel] diameter = <length>` overrides the model's diameter; `[wheel] units` ([../../guide/configuration.md](../../guide/configuration.md)) |
 | Default | `ferris-g5` when nothing is set |
-| Units setting | `[wheel] units = cm` (default) or `in`: the unit a bare `diameter` number is in, and the unit every wheel size is shown in first (`--wheels`, `--check-config`, the web page). Distances are always km |
+| Units setting | `[wheel] units = cm` (default) or `in`: the unit a bare `diameter` number is in, and the unit every wheel size is shown in first (`--list-wheels`, `--check-config`, the web page). Distances are always km |
 | Units in a value | `cm`, `mm`, `m`, `in`, `inch`, `inches`, `"`; an explicit unit always wins over the setting. With no unit and no setting in play (the presets file), a bare number is an error |
 | Plausibility | Diameters outside 0.5–2 m are an error: cat wheels are roughly 0.9–1.6 m. When a bare number would be plausible in the other unit, the error says so (`'48.5' is 48 cm …; did you mean 48.5in?`) |
 | Errors | An unknown model or an unreadable diameter is logged, and the display runs on the default wheel; `purrdometer-display --check-config` prints the resolved wheel and exits non-zero on any error |
-| Listing | `purrdometer-display --wheels` lists every preset with its diameter and circumference |
-| One owner | The presets live in `data/wheels.ini` (installed as `/usr/share/purrdometer/wheels.ini`), read by both the display (Python) and the web dashboard (C++); the parsing rules above hold in both and are tested in both |
-| Estimated | A preset whose maker publishes no inner diameter carries `estimated = true`; `--wheels`, `--check-config` and the web page say so and advise measuring |
+| Listing | `purrdometer-display --list-wheels` lists every preset with its diameter and circumference |
+| One owner | The presets live in `data/wheels.ini` (installed as `/usr/share/purrdometer/wheels.ini`); the display and the web dashboard read it through the same C++ code |
+| Estimated | A preset whose maker publishes no inner diameter carries `estimated = true`; `--list-wheels`, `--check-config` and the web page say so and advise measuring |
 
 ## Presets
 

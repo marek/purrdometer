@@ -18,15 +18,15 @@ proven on a venue below before it is called done.
 | Toolchain | GCC 14 from trixie, `-std=c++26`; trixie is the oldest release that has it |
 | Logger | `build-essential`, `pkg-config`, `libsdbus-c++-dev`, `libsqlite3-dev` | (sdbus-c++ 2) |
 | Web dashboard | `libcpp-httplib-dev`, `nlohmann-json3-dev`, `libsqlite3-dev` |
-| Display | `python3-pil`, `python3-spidev`, `python3-smbus2`, `python3-gpiozero`, `python3-lgpio`, `fonts-dejavu-core` |
+| Display | `libfreetype-dev`, `libharfbuzz-dev`, `libgpiod-dev`, `libpng-dev`, `fonts-dejavu-core` |
 | Package | `dpkg-dev` |
 
 ## Make targets
 
 | Target | Does |
 |---|---|
-| `make` | Builds `bin/purrdometer-logger`, then `bin/pagec`, the templates in `build/gen/`, and `bin/purrdometer-web`. Run it without `-j`: compiling `httplib.h` twice at once makes the Zero swap |
-| `make test` | `purrdometer-logger --selftest` (accounting and storage), `purrdometer-web --selftest` (wheels, calendar, templates, a database through the page) and the Python unit tests in `python/tests` |
+| `make` | Builds `bin/purrdometer-logger`, `bin/purrdometer-display`, then `bin/pagec`, the pages in `build/gen/`, and `bin/purrdometer-web` |
+| `make test` | The three programs' `--selftest`: the logger (accounting and storage), the web server (wheels, calendar, pages, settings over HTTP, a database through the page), the display (panel and touch mapping, text, every screen, PNG) |
 | `make preview` | Renders every screen to `preview/*.png` from a fake-history database; no hardware |
 | `make media` | Same renders into `docs/media/` for the README |
 | `make serve` | The web dashboard on port 8081 over fake history, from the checkout |
@@ -54,7 +54,7 @@ For development either can be stopped (`sudo systemctl stop purrdometer-display`
 and run in a terminal from the checkout:
 
 ```sh
-cd python && python3 -m purrdometer.display -v --db /var/lib/purrdometer/purrdometer.db
+bin/purrdometer-display -v --db /var/lib/purrdometer/purrdometer.db
 bin/purrdometer-logger --db tmp/test.db --sensor-file tmp/sensor
 ```
 

@@ -3,6 +3,8 @@
 // date) goes through a named formatter so every format is chosen on purpose.
 #pragma once
 
+#include "common/format.h"
+
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -35,9 +37,5 @@ void text(std::string& out, T v)
 inline void raw(std::string& out, std::string_view s) { out += s; }
 
 std::string escape(std::string_view s);
-std::string thousands(long long n);          // 223,867
-std::string km(double km);                   // 4.8, 857, 1,204
-std::string fixed(double v, int decimals);   // SVG coordinates, speeds
-std::string ago(double seconds);             // "5 min ago"
 
 } // namespace purr::web

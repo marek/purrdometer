@@ -1,5 +1,5 @@
 // Wheels: presets from wheels.ini, measured diameters, distance per rotation.
-// Mirrors python/purrdometer/wheels.py; docs/intents/data/wheels.md owns the rules.
+// docs/intents/data/wheels.md owns the rules.
 #pragma once
 
 #include <map>

@@ -1,6 +1,6 @@
 ---
 name: verification
-description: How to actually verify a change in purrdometer before calling it done - make test (logger --selftest and Python unittest), make preview (look at the PNGs), and on-device testing on the Pi (whiskerwheel) via journalctl and btmon - plus the hygiene every test run must keep (nothing left running, nothing left in the tree) and the traps of BLE and display testing. Use before reporting any fix or feature as complete, before ticking a plan box, and before and after any on-device test.
+description: How to actually verify a change in purrdometer before calling it done - make test (the three programs' --selftest), make preview (look at the PNGs), and on-device testing on the Pi (whiskerwheel) via journalctl and btmon - plus the hygiene every test run must keep (nothing left running, nothing left in the tree) and the traps of BLE and display testing. Use before reporting any fix or feature as complete, before ticking a plan box, and before and after any on-device test.
 ---
 
 # Verification
@@ -31,7 +31,7 @@ on-device screen for display changes.
 
 | Venue | Command | Proves |
 |---|---|---|
-| All tests | `make test` | Runs `bin/purrdometer-logger --selftest`, `bin/purrdometer-web --selftest` and the Python unittest suite in `python/tests/` |
+| All tests | `make test` | Runs `--selftest` of `bin/purrdometer-logger`, `bin/purrdometer-web` and `bin/purrdometer-display` |
 | Display preview | `make preview` | Renders all four screens (NOW, 30 DAYS, CALENDAR, ALL TIME) to `preview/*.png` from a fake DB; open the PNGs and look |
 | Web page | `make serve`, open `http://whiskerwheel:8081/` or screenshot it headless | The dashboard over a fake DB; look at it |
 | On device — logs | `ssh marek@whiskerwheel 'journalctl -u purrdometer-logger -u purrdometer-display -n 100'` | What the running services report; the first place to check after a .deb install |
@@ -45,7 +45,7 @@ What each kind of change needs:
 |---|---|
 | Any C++ code | `make test`; `make deb` if packaging changed |
 | A template or the web dashboard | `make test` and `make serve`: look at the page |
-| Any Python display code | `make test` and `make preview` — open the PNGs and look |
+| Display code | `make test` and `make preview` — open the PNGs and look |
 | BLE handling, logger reconnect logic | `make test` + on-device BLE check (`purrdometer-btdiag`); a code-only `make test` pass is not enough |
 | SQLite schema, query logic | `make test` and `make preview`; verify the numbers shown match the fake DB |
 | Display layout, fonts, touch bar | `make preview` and look at every affected screen; on-device check owed if the layout is hard to judge from PNGs |
@@ -56,7 +56,7 @@ A run is repeated only when something it covers changed since it last
 passed.
 
 Every run is read whole: its log stays in `tmp/` until it has been
-read, and an exit code alone is not a reading — a Python traceback or a
+read, and an exit code alone is not a reading — a compiler error or a
 selftest assertion passes straight through such a filter.
 
 ## On-device feel

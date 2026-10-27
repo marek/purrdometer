@@ -44,7 +44,7 @@ Two checks that apply here often:
   field.
 - **No compatibility shims in the D-Bus handling.** The BlueZ API
   policy has one form; there is no legacy mode beside it.
-- **Third-party libraries** (`sdbus-c++`, `sqlite3`, Pillow) are not
+- **Third-party libraries** (`sdbus-c++`, `sqlite3`, FreeType, cpp-httplib) are not
   edited or restyled; if they lack something, our code works around it
   on our side of the boundary.
 - **Rename freely** when a name is wrong, without leaving the old one.

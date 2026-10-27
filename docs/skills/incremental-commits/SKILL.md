@@ -24,7 +24,7 @@ One repo, so the split is by kind, not by repository:
 | What | Shape |
 |---|---|
 | Plans, intents, skills, roles, tools, hooks, scripts | One commit per phase as it lands |
-| Source (C++, Python), Makefile, packaging | One commit per phase of work, once proven with the venues |
+| Source, pages, Makefile, packaging | One commit per phase of work, once proven with the venues |
 | Work on a branch (a worktree, an agent's slice) | One commit per plan box, proven by the tests that cover it |
 | A branch promoted to `main` | Squashed: one commit per phase, or per coherent part of a phase, never one per box. Plan-tick and plan-index commits fold into the work they record |
 

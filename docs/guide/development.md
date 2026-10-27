@@ -12,10 +12,8 @@ skills and roles beside it.
 
 | Folder | What |
 |---|---|
-| `src/` | `purrdometer-logger.cpp` (the BlueZ client, rotation accounting, SQLite writer); `purrdometer-web.cpp` (the dashboard server); `web/` (reading the database, the dashboard's data, HTML helpers); `common/` (config, wheels, calendar days); `tools/pagec.cpp` (the template compiler) |
+| `src/` | `purrdometer-logger.cpp` (the BlueZ client, rotation accounting, SQLite writer); `purrdometer-display.cpp` (the e-paper loop) with `display/` (screens, canvas and text, panel and touch drivers, PNG); `purrdometer-web.cpp` (the dashboard server) with `web/`; `common/` (config, wheels, the database, formats, calendar days); `tools/pagec.cpp` (the page compiler) |
 | `web/pages/` | The dashboard's pages as `.page`, compiled to C++ ([templates](../intents/web/pages.md)) |
-| `python/purrdometer/` | The screen: `render.py` (the screens and touch bar), `data.py` (reading the database), `wheels.py`, `config.py`, `hw.py` (panel and touch driver), `display.py` (refresh loop and CLI) |
-| `python/tests/` | Python unit tests |
 | `data/wheels.ini` | The wheel presets, read by both the screen and the dashboard |
 | `packaging/` | `build-deb.sh`, the Debian control file and maintainer scripts, the systemd units, the default config |
 | `system/` | Files the package installs into the system (`btdiag.sh`, the NetworkManager drop-in) |
@@ -45,7 +43,7 @@ way, but slowly:
 
 ```sh
 make            # the logger, the template compiler, the dashboard (no -j: the Zero swaps)
-make test       # both self-tests and the Python unit tests
+make test       # the three programs' self-tests
 make preview    # every screen as a PNG in preview/, from made-up history
 make serve      # the dashboard on :8081 over made-up history
 make deb        # the package, in dist/ (runs make test first)

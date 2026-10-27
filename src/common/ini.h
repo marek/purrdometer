@@ -1,6 +1,5 @@
 // Minimal INI reader for purrdometer.conf and wheels.ini: [section], key = value,
-// whole-line and inline comments starting with # or ;. Same subset Python's
-// configparser reads with inline_comment_prefixes=("#", ";").
+// whole-line and inline comments starting with # or ;.
 #pragma once
 
 #include <fstream>

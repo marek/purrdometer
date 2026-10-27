@@ -7,9 +7,6 @@ User=purrdometer
 Group=purrdometer
 SupplementaryGroups=spi i2c gpio
 StateDirectory=purrdometer
-# lgpio drops notification FIFOs in the working directory
-RuntimeDirectory=purrdometer-display
-WorkingDirectory=/run/purrdometer-display
 ExecStart=/usr/bin/purrdometer-display
 Restart=always
 RestartSec=5

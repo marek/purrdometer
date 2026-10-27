@@ -34,7 +34,7 @@ model = ferris-g5
 | `star-cat-l` | Star Cat Wheel L | about 97.8 cm (38.5 in) | 3.07 m |
 | `star-cat-xl` | Star Cat Wheel XL | about 113.0 cm (44.5 in) | 3.55 m |
 
-`purrdometer-display --wheels` prints the same list. Star Cat publishes only
+`purrdometer-display --list-wheels` prints the same list. Star Cat publishes only
 the outside size of its wheels (106 cm and 120 cm, 41.7 in and 47.2 in), so their running
 diameters are estimates: measure yours and set `diameter` for accurate
 distances.

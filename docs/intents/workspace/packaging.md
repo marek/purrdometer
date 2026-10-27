@@ -18,9 +18,9 @@ rotation history survives both.
 | Name, architecture | `purrdometer`, the build machine's architecture (`arm64` on the Pi); built natively on the Pi |
 | Build | `packaging/build-deb.sh` (`make deb`): runs `make test` first and refuses to package a failing tree; artifacts in `dist/`. A release build starts from `make clean`; a dev build reuses what is built |
 | Version | `VERSION` for a release build (`RELEASE=1`); otherwise `VERSION+git<UTC timestamp>.<short sha>[.dirty]`, which dpkg orders after the release and after every earlier dev build |
-| Contents | `/usr/bin/purrdometer-logger`, `/usr/bin/purrdometer-web`, `/usr/bin/purrdometer-display` (a wrapper over the Python package in `/usr/lib/purrdometer`), the wheel presets in `/usr/share/purrdometer/wheels.ini`, `/usr/sbin/purrdometer-btdiag`, both systemd units in `/lib/systemd/system`, `/etc/purrdometer/purrdometer.conf`, `/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf`, the README in `/usr/share/doc/purrdometer` |
+| Contents | `/usr/bin/purrdometer-logger`, `/usr/bin/purrdometer-web`, `/usr/bin/purrdometer-display`, the wheel presets in `/usr/share/purrdometer/wheels.ini`, `/usr/sbin/purrdometer-btdiag`, both systemd units in `/lib/systemd/system`, `/etc/purrdometer/purrdometer.conf`, `/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf`, the README in `/usr/share/doc/purrdometer` |
 | Conffiles | `/etc/purrdometer/purrdometer.conf` and the NetworkManager drop-in: local edits survive upgrades |
-| Depends | both binaries' shared libraries computed by `dpkg-shlibdeps`, plus BlueZ, `adduser`, Python 3 and the display's Python packages and font; `network-manager` and `sqlite3` are Recommends |
+| Depends | the three binaries' shared libraries computed by `dpkg-shlibdeps`, plus BlueZ, `adduser` and the display's font; `network-manager` and `sqlite3` are Recommends |
 | Prompts | none: the maintainer scripts are non-interactive |
 
 ## Services
@@ -28,7 +28,7 @@ rotation history survives both.
 | Unit | Runs | As |
 |---|---|---|
 | `purrdometer-logger.service` | `purrdometer-logger` against `/var/lib/purrdometer` | `purrdometer`, with `bluetooth` |
-| `purrdometer-display.service` | `purrdometer-display` | `purrdometer`, with `spi`, `i2c`, `gpio`; working directory under `/run` because lgpio writes notification FIFOs there |
+| `purrdometer-display.service` | `purrdometer-display` | `purrdometer`, with `spi`, `i2c`, `gpio` |
 | `purrdometer-web.service` | `purrdometer-web` | `purrdometer`, read-only system, no devices, memory and CPU capped ([../web/dashboard.md](../web/dashboard.md)) |
 
 All restart on failure, start at boot, and share `/var/lib/purrdometer` as
@@ -50,8 +50,9 @@ their state directory.
 |---|---|
 | Install, upgrade | User and state directory exist, the BlueZ setting is present exactly once, all three services enabled and restarted |
 | Remove | Services stopped and disabled; conffiles, system settings and data kept |
-| Purge | The marker line and its setting removed from `main.conf` and BlueZ restarted; the history in `/var/lib/purrdometer` is kept and the purge says so |
+| Purge | The marker line and its setting removed from `main.conf` and BlueZ restarted; the history in `/var/lib/purrdometer` and the `purrdometer` user that owns it are kept, and the purge says so |
 | Reinstall after purge | Same as a first install; the kept history is picked up |
 
 A later `bluez` upgrade may ask about the modified `main.conf`; keeping the
 local version keeps the setting.
+

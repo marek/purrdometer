@@ -1,6 +1,6 @@
 ---
 name: code-style
-description: Comment, prose, naming and coding conventions for purrdometer (C++26 logger and web source and Python display source, plus the docs/intents corpus) - use before writing or reviewing comments, before writing or editing any intent doc, when choosing a name for a new file, function or type, and before checking BLE or D-Bus handling against the BlueZ reference.
+description: Comment, prose, naming and coding conventions for purrdometer (C++26 source, plus the docs/intents corpus) - use before writing or reviewing comments, before writing or editing any intent doc, when choosing a name for a new file, function or type, and before checking BLE or D-Bus handling against the BlueZ reference.
 ---
 
 # Code style
@@ -23,11 +23,6 @@ one-liner:
 ```cpp
 // clamp to valid CSC wheel revolution range: sensor wraps at 2^16
 rev_count = static_cast<uint16_t>(raw & 0xFFFF);
-```
-
-```python
-# e-paper is 1-bit: threshold at 128, not 127, to match the display's own dither
-px = 255 if gray >= 128 else 0
 ```
 
 No block comments, no explanation of the obvious, no banner
@@ -116,27 +111,13 @@ Before finishing a comment or a doc paragraph, cut:
 - End control-only lines with `-%>` so the output has no stray blank
   lines.
 
-## Python conventions
+## Guard clauses
 
-- Target Python 3, no compatibility shims.
-- Type hints on function signatures; `from __future__ import
-  annotations` is fine for forward references.
-- Constants at module level in `UPPER_SNAKE_CASE`
-  (e.g. `DISPLAY_WIDTH = 250`, `DISPLAY_HEIGHT = 122`).
-- **No magic numbers.** The display's pixel dimensions, the touch
-  bar's row heights, the screen names — all named constants.
-- Imports in order: stdlib, then third-party (Pillow, etc.), each group
-  separated by a blank line. No wildcard imports.
-- `unittest` for tests; test files under `python/tests/`, one file
-  per module under test.
-- **Short-circuit returns.** Handle the exceptional case first and
-  return — a guard clause — so the main path stays flat. This holds in
-  C++ and Python equally.
+Handle the exceptional case first and return, so the main path stays flat.
 
 ## Naming
 
-- A name says what the thing is: `rotation_count_per_minute`,
-  `days_distance_m`, `TouchBar`.
+- A name says what the thing is: `todayRevs`, `diameterM`, `Dashboard`.
 - **C++:** types are `PascalCase` (`Wheel`, `Dashboard`); functions,
   variables and members are `camelCase` (`loadStats`, `diameterM`);
   private data members end in an underscore (`connected_`); constants
@@ -144,9 +125,6 @@ Before finishing a comment or a doc paragraph, cut:
   lowercase (`purr`, `purr::web`); files are kebab-case for programs
   (`purrdometer-web.cpp`) and lowercase for modules (`wheel.cpp`). A
   quantity's unit ends its name (`diameterM`, `lastWall`). No type prefix.
-- **Python:** classes are `PascalCase`; functions, variables and
-  module-level names are `snake_case`; constants are `UPPER_SNAKE_CASE`.
-  Private helpers start with `_`.
 - **A new name must not collide with an existing one.** Grep the
   source first — the headers and module exports are the contract.
 - Rename only when a name is actively misleading; grep every reference
@@ -155,10 +133,10 @@ Before finishing a comment or a doc paragraph, cut:
 ## Structure
 
 - A file mixing distinct responsibilities is a split candidate — check
-  while writing, not when asked. The logger's BLE handling, SQLite
-  writes and `--selftest` path are in `src/`; the display's screen
-  renderers, touch handling and fake-DB fixture are in
-  `python/purrdometer/`.
+  while writing, not when asked. Each program's entry point is
+  `src/purrdometer-*.cpp`; what more than one program uses is in
+  `src/common/`; a program's own modules are in `src/display/` or
+  `src/web/`.
 - Two features that need the same behaviour share the implementation;
   the NOW screen and the 30-DAYS screen both read from SQLite through
   the same query helper.

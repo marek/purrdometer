@@ -21,3 +21,4 @@ the rest can be worked.
 | [2026-10-27-1216-docs-and-working-structure.md](2026-10-27-1216-docs-and-working-structure.md) | The README, guide, intents, plans, skills, roles and working agreement adopted from wayland-canvas | 9 | 0 |
 | [2026-10-27-1236-wheel-presets-and-web-dashboard.md](2026-10-27-1236-wheel-presets-and-web-dashboard.md) | Presets for the Ferris, Grand Ferris, One Fast Cat and Star Cat wheels from one shared file; a C++ web dashboard with pages compiled to C++ | 9 | 1 |
 | [2026-10-27-1420-cpp26-trixie-and-web-settings.md](2026-10-27-1420-cpp26-trixie-and-web-settings.md) | C++26 on Raspberry Pi OS trixie, builds in a trixie container, and the dashboard's gear page for the wheel and screen settings | 9 | 1 |
+| [2026-10-27-1615-display-in-cpp.md](2026-10-27-1615-display-in-cpp.md) | The e-paper display ported to C++, proven pixel by pixel against the Python version, and Python removed | 8 | 1 |

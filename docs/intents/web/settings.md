@@ -73,5 +73,5 @@ listens, could lock itself out or open itself up.
 `purrdometer-web --selftest`: address classes, the layering, validation, and a
 real server and client: the page and its token, a save without the token
 refused, a save written and used, an implausible diameter refused with its
-hint, reset, and `off` refusing. `python/tests`: the display reads the same
-layering.
+hint, reset, and `off` refusing. The display reads the settings through the
+same C++ code.

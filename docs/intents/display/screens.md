@@ -12,8 +12,9 @@ cat's running has gone over the last 30 days and since the start.
 
 Waveshare 2.13" Touch e-Paper HAT, V4 panel: 250×122 pixels, black and white,
 drawn in landscape. The bottom 17 px row is the touch bar; the screens use
-the rest. Text is DejaVu Sans drawn without anti-aliasing; shades are 1-bit
-dither patterns.
+the rest. Text is DejaVu Sans, rendered monochrome and laid out by HarfBuzz
+with kerning and hinted advances, so every glyph is a whole number of pixels
+wide and small text keeps even gaps; shades are 1-bit dither patterns.
 
 ## The screens
 
