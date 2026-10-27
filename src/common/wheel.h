@@ -33,6 +33,7 @@ constexpr const char* DEFAULT_WHEEL = "ferris-g5";
 // [wheel] units: how wheel sizes are shown, and what a bare diameter number means.
 constexpr const char* DEFAULT_UNITS = "cm";
 bool validUnits(const std::string& units); // "cm" or "in"
+std::string toLower(std::string s);
 
 // "48.5in", "48.5\"", "123 cm", "1230mm", "1.23m" -> metres; a bare number takes
 // defaultUnit. Throws std::invalid_argument.

@@ -31,7 +31,7 @@
 
 namespace {
 
-const std::string BLUEZ = "org.bluez";
+const sdbus::ServiceName BLUEZ{"org.bluez"};
 const std::string ADAPTER_PATH = "/org/bluez/hci0";
 const std::string ADAPTER_IFACE = "org.bluez.Adapter1";
 const std::string DEVICE_IFACE = "org.bluez.Device1";
@@ -54,7 +54,7 @@ std::mutex logMutex;
 template <typename... Args>
 void log(Args&&... args)
 {
-    std::lock_guard<std::mutex> lock(logMutex);
+    std::scoped_lock lock(logMutex);
     (std::cout << ... << args) << std::endl; // journald adds timestamps
 }
 
@@ -163,14 +163,14 @@ public:
 
     void setState(const std::string& key, const std::string& value)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        std::scoped_lock lock(mutex_);
         Stmt s(db_, "INSERT INTO state VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
         s.text(1, key).text(2, value).step();
     }
 
     std::optional<std::string> state(const std::string& key)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        std::scoped_lock lock(mutex_);
         Stmt s(db_, "SELECT value FROM state WHERE key = ?1");
         s.text(1, key);
         if (s.step() == SQLITE_ROW)
@@ -180,7 +180,7 @@ public:
 
     void record(double ts, CrankSample cur, uint32_t delta)
     {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        std::scoped_lock lock(mutex_);
         exec("BEGIN");
         if (delta > 0) {
             Stmt s(db_, "INSERT INTO minutes VALUES (?1, ?2) "
@@ -235,7 +235,7 @@ public:
     {
         restoreCounter();
         bus_ = sdbus::createSystemBusConnection();
-        root_ = sdbus::createProxy(*bus_, BLUEZ, "/");
+        root_ = sdbus::createProxy(*bus_, BLUEZ, sdbus::ObjectPath{"/"});
         root_->uponSignal("InterfacesRemoved").onInterface(OM_IFACE).call(
             [this](const sdbus::ObjectPath& path, const std::vector<std::string>&) {
                 if (path == devicePath_) {
@@ -243,8 +243,7 @@ public:
                     setConnected(false);
                 }
             });
-        root_->finishRegistration();
-        adapter_ = sdbus::createProxy(*bus_, BLUEZ, ADAPTER_PATH);
+        adapter_ = sdbus::createProxy(*bus_, BLUEZ, sdbus::ObjectPath{ADAPTER_PATH});
         bus_->enterEventLoopAsync();
     }
 
@@ -302,7 +301,7 @@ private:
         mac_ = mac;
         devicePath_ = macToPath(mac);
         store_.setState("sensor", mac);
-        device_ = sdbus::createProxy(*bus_, BLUEZ, devicePath_);
+        device_ = sdbus::createProxy(*bus_, BLUEZ, sdbus::ObjectPath{devicePath_});
         device_->uponSignal("PropertiesChanged").onInterface(PROPS_IFACE).call(
             [this](const std::string& iface, const Props& changed, const std::vector<std::string>&) {
                 if (iface != DEVICE_IFACE)
@@ -317,7 +316,6 @@ private:
                     log("services resolved: ", servicesResolved_ ? "yes" : "no");
                 }
             });
-        device_->finishRegistration();
         log("target sensor ", mac_);
     }
 
@@ -347,7 +345,7 @@ private:
     {
         log("scanning for ", mac_.empty() ? "any CSC sensor" : mac_);
         adapter_->callMethod("SetDiscoveryFilter").onInterface(ADAPTER_IFACE).withArguments(
-            Props{{"UUIDs", std::vector<std::string>{CSC_SERVICE_UUID}}, {"Transport", std::string("le")}});
+            Props{{"UUIDs", sdbus::Variant{std::vector<std::string>{CSC_SERVICE_UUID}}}, {"Transport", sdbus::Variant{std::string("le")}}});
         try {
             adapter_->callMethod("StartDiscovery").onInterface(ADAPTER_IFACE);
         } catch (const sdbus::Error& e) {
@@ -385,7 +383,7 @@ private:
         if (it == props.end())
             return false;
         auto uuids = it->second.get<std::vector<std::string>>();
-        return std::find(uuids.begin(), uuids.end(), CSC_SERVICE_UUID) != uuids.end();
+        return std::ranges::contains(uuids, CSC_SERVICE_UUID);
     }
 
     void stopDiscovery()
@@ -412,7 +410,7 @@ private:
     {
         for (auto& [path, ifaces] : objs) {
             auto ch = ifaces.find(CHAR_IFACE);
-            if (ch != ifaces.end() && std::string(path).rfind(devicePath_ + "/", 0) == 0
+            if (ch != ifaces.end() && path.starts_with(devicePath_ + "/")
                 && ch->second.at("UUID").get<std::string>() == uuid)
                 return path;
         }
@@ -426,7 +424,7 @@ private:
             return;
         try {
             std::vector<uint8_t> v;
-            sdbus::createProxy(*bus_, BLUEZ, path)->callMethod("ReadValue").onInterface(CHAR_IFACE)
+            sdbus::createProxy(*bus_, BLUEZ, sdbus::ObjectPath{path})->callMethod("ReadValue").onInterface(CHAR_IFACE)
                 .withArguments(Props{}).storeResultsTo(v);
             if (!v.empty()) {
                 store_.setState("battery", std::to_string(v[0]));
@@ -446,7 +444,7 @@ private:
             return;
         }
         readBattery(objs);
-        characteristic_ = sdbus::createProxy(*bus_, BLUEZ, charPath);
+        characteristic_ = sdbus::createProxy(*bus_, BLUEZ, sdbus::ObjectPath{charPath});
         characteristic_->uponSignal("PropertiesChanged").onInterface(PROPS_IFACE).call(
             [this](const std::string& iface, const Props& changed, const std::vector<std::string>&) {
                 if (iface != CHAR_IFACE)
@@ -454,7 +452,6 @@ private:
                 if (auto it = changed.find("Value"); it != changed.end())
                     onMeasurement(it->second.get<std::vector<uint8_t>>());
             });
-        characteristic_->finishRegistration();
         // The notification session belongs to this D-Bus connection and lives as long as it does.
         characteristic_->callMethod("StartNotify").onInterface(CHAR_IFACE);
         notifying_ = true;
@@ -526,7 +523,7 @@ int selftest()
     mem.record(120.5, {5, 0}, 3);
     mem.record(150.0, {7, 0}, 2);
     mem.record(185.0, {7, 0}, 0);
-    check(mem.state("last_wall").value().rfind("185", 0) == 0, "state persisted");
+    check(mem.state("last_wall").value().starts_with("185"), "state persisted");
     std::cout << (failures ? "FAILED\n" : "all passed\n");
     return failures ? 1 : 0;
 }

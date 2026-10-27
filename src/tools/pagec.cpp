@@ -17,7 +17,7 @@
 // #line directives point compiler errors at the template.
 
 #include <cctype>
-#include <cstdio>
+#include <format>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -64,9 +64,7 @@ std::string literal(const std::string& text)
         case '\t': s += "\\t"; break;
         default:
             if (c < 0x20) {
-                char buf[8];
-                std::snprintf(buf, sizeof buf, "\\%03o", c);
-                s += buf;
+                s += std::format("\\{:03o}", c);
             } else {
                 s += char(c);
             }
@@ -116,13 +114,13 @@ Out compile(const std::string& file, const std::string& src)
             continue;
         if (!inner.empty() && inner[0] == '@') {
             std::string d = trim(inner.substr(1));
-            if (d.rfind("include ", 0) == 0)
+            if (d.starts_with("include "))
                 out.includes.push_back(trim(d.substr(8)));
-            else if (d.rfind("param ", 0) == 0)
+            else if (d.starts_with("param "))
                 out.params.push_back(trim(d.substr(6)));
             else
                 fail(file, tagLine, "unknown directive: " + d);
-        } else if (inner.rfind("==", 0) == 0) {
+        } else if (inner.starts_with("==")) {
             out.body += at + "    purr::web::raw(out, " + trim(inner.substr(2)) + ");\n";
         } else if (!inner.empty() && inner[0] == '=') {
             out.body += at + "    purr::web::text(out, " + trim(inner.substr(1)) + ");\n";

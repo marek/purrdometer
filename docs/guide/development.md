@@ -31,7 +31,17 @@ skills and roles beside it.
 
 ## Build and test
 
-On the Pi:
+On any arm64 machine with podman or docker (an Apple-silicon Mac is ideal),
+in a Debian trixie container that matches the Pi:
+
+```sh
+packaging/build-in-container.sh             # make test, then the .deb in dist/
+packaging/build-in-container.sh make test   # any command
+scp dist/purrdometer_*.deb whiskerwheel: && ssh whiskerwheel 'sudo apt install ./purrdometer_*.deb'
+```
+
+A full build there takes about 20 seconds. On the Pi itself it works the same
+way, but slowly:
 
 ```sh
 make            # the logger, the template compiler, the dashboard (no -j: the Zero swaps)
@@ -41,8 +51,8 @@ make serve      # the dashboard on :8081 over made-up history
 make deb        # the package, in dist/ (runs make test first)
 ```
 
-A first build takes about 7 minutes on a Pi Zero, nearly all of it
-compiling `httplib.h`; after that, editing a template rebuilds only that page.
+A first build on a Pi Zero takes over 10 minutes and swaps hard, nearly all of
+it compiling `httplib.h`; after that, editing a page rebuilds only that page.
 
 ## Writing a page
 

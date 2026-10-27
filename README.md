@@ -65,7 +65,7 @@ Then spin the wheel to wake the sensor. Dependencies and the details are in
 
 | Hardware | |
 |---|---|
-| Computer | Raspberry Pi Zero 2 W, Raspberry Pi OS bookworm or later |
+| Computer | Raspberry Pi Zero 2 W, Raspberry Pi OS trixie or later |
 | Screen | Waveshare 2.13" Touch e-Paper HAT (V4) |
 | Sensor | Any Bluetooth LE cycling cadence sensor (built with a Garmin one) |
 | Wheel | One of the popular brands with a preset, or any wheel with a known diameter |

@@ -1,7 +1,7 @@
 #include "web/html.h"
 
 #include <cmath>
-#include <cstdio>
+#include <format>
 
 namespace purr::web {
 
@@ -23,12 +23,7 @@ std::string thousands(long long n)
     return n < 0 ? "-" + out : out;
 }
 
-std::string fixed(double v, int decimals)
-{
-    char buf[64];
-    std::snprintf(buf, sizeof buf, "%.*f", decimals, v);
-    return buf;
-}
+std::string fixed(double v, int decimals) { return std::format("{:.{}f}", v, decimals); }
 
 // Same rule as the e-paper screens: one decimal below 100, whole above.
 std::string km(double km)

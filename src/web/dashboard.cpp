@@ -1,6 +1,7 @@
 #include "web/dashboard.h"
 
 #include <algorithm>
+#include <format>
 
 namespace purr {
 
@@ -18,17 +19,16 @@ std::vector<Bar> bars(const std::vector<DayCount>& rows, const Wheel& wheel, cal
     for (auto& [d, r] : rows) {
         acc += r;
         Bar b;
-        auto c = cal::toCivil(d);
         if (unit == "day") {
-            b.label = std::string(cal::weekdayAbbr(d)) + " " + cal::monthDay(d);
+            b.label = cal::weekdayAbbr(d) + " " + cal::monthDay(d);
             b.tick = cal::weekday(d) == 0 ? cal::monthDay(d) : "";
             b.today = d == today;
         } else if (unit == "week") {
             b.label = "week of " + cal::longDate(d);
-            b.tick = c.d <= 7 ? cal::monthAbbr(c.m) : "";
+            b.tick = cal::dayOf(d) <= 7 ? cal::monthAbbr(d) : "";
         } else {
-            b.label = std::string(cal::monthAbbr(c.m)) + " " + std::to_string(c.y);
-            b.tick = cal::monthAbbr(c.m);
+            b.label = std::format("{} {}", cal::monthAbbr(d), cal::yearOf(d));
+            b.tick = cal::monthAbbr(d);
         }
         b.km = wheel.km(r);
         b.height = double(r) / peak;
@@ -94,9 +94,9 @@ Dashboard buildDashboard(const Stats& s, const Wheel& wheel, std::time_t now)
         v.calendar.push_back(c);
     }
     for (int w = 0; w < Dashboard::CALENDAR_WEEKS; ++w) {
-        auto monday = cal::toCivil(start + 7 * w);
-        if (monday.d <= 7)
-            v.calendarMonths.emplace_back(w, cal::monthAbbr(monday.m));
+        cal::Day monday = start + 7 * w;
+        if (cal::dayOf(monday) <= 7)
+            v.calendarMonths.emplace_back(w, cal::monthAbbr(monday));
     }
     return v;
 }

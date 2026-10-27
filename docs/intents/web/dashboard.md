@@ -14,7 +14,7 @@ of memory, a page in tens of milliseconds. Read-only over the database
 
 | Part | Choice | Why |
 |---|---|---|
-| Language | C++17, like the logger | Native and small: a few MB on a 416 MB Pi |
+| Language | C++26, like the logger | Native and small: a few MB on a 416 MB Pi |
 | HTTP | cpp-httplib (Debian `libcpp-httplib`) | A small compiled library from apt; a fixed pool of 2 worker threads |
 | Pages | `.page` files compiled to C++ at build time ([pages.md](pages.md)) | No runtime template engine; a page can call any C++ function |
 | JSON | nlohmann-json (header-only, from apt) | |

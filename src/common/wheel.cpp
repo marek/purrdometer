@@ -4,14 +4,14 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cmath>
-#include <cstdio>
+#include <numbers>
+#include <format>
 #include <regex>
 #include <stdexcept>
 
 namespace purr {
 
-double Wheel::circumferenceM() const { return M_PI * diameterM; }
+double Wheel::circumferenceM() const { return std::numbers::pi * diameterM; }
 
 const Wheel* WheelPresets::find(const std::string& key) const
 {
@@ -19,6 +19,12 @@ const Wheel* WheelPresets::find(const std::string& key) const
         if (w.key == key)
             return &w;
     return nullptr;
+}
+
+std::string toLower(std::string s)
+{
+    std::ranges::transform(s, s.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+    return s;
 }
 
 namespace {
@@ -41,8 +47,7 @@ bool validUnits(const std::string& units) { return units == "cm" || units == "in
 double parseLength(const std::string& text, const std::string& defaultUnit)
 {
     static const std::regex re(R"(\s*([0-9]+(?:\.[0-9]+)?)\s*(in|inch|inches|"|cm|mm|m)?\s*)");
-    std::string lower = text;
-    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
+    std::string lower = toLower(text);
     std::smatch m;
     if (!std::regex_match(lower, m, re) || (!m[2].matched && defaultUnit.empty()))
         throw std::invalid_argument("not a length with a unit (cm, in, mm, m): '" + text + "'");
@@ -63,17 +68,13 @@ double parseDiameter(const std::string& text, const std::string& defaultUnit)
         if (alt >= MIN_DIAMETER_M && alt <= MAX_DIAMETER_M)
             hint = "; did you mean " + std::string(m[1]) + other + "?";
     }
-    char cm[32];
-    std::snprintf(cm, sizeof cm, "%.0f cm", metres * 100);
-    throw std::invalid_argument("'" + text + "' is " + cm + ", not a cat wheel's diameter" + hint);
+    throw std::invalid_argument(std::format("'{}' is {:.0f} cm, not a cat wheel's diameter{}", text, metres * 100, hint));
 }
 
 std::string showLength(double metres, const std::string& units)
 {
-    char cm[32], in[32];
-    std::snprintf(cm, sizeof cm, "%.1f cm", metres * 100);
-    std::snprintf(in, sizeof in, "%.1f in", metres / INCH);
-    return units == "in" ? std::string(in) + " (" + cm + ")" : std::string(cm) + " (" + in + ")";
+    std::string cm = std::format("{:.1f} cm", metres * 100), in = std::format("{:.1f} in", metres / INCH);
+    return units == "in" ? in + " (" + cm + ")" : cm + " (" + in + ")";
 }
 
 WheelPresets loadPresets(const std::string& path)
@@ -105,8 +106,7 @@ WheelPresets loadPresets(const std::string& path)
 Wheel resolveWheel(const WheelPresets& presets, const std::optional<std::string>& model,
                    const std::optional<std::string>& diameter, const std::string& units)
 {
-    std::string key = model.value_or("");
-    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
+    std::string key = toLower(model.value_or(""));
     const Wheel* base = key.empty() ? nullptr : presets.find(key);
     if (!key.empty() && !base)
         throw std::invalid_argument("unknown wheel model '" + *model + "'");
@@ -134,9 +134,7 @@ std::string describe(const Wheel& w, const std::string& units)
         std::string outer = showLength(*w.outerM, units);
         text += ", outer " + outer.substr(0, outer.find(" ("));
     }
-    char buf[64];
-    std::snprintf(buf, sizeof buf, ", %.3f m per rotation", w.circumferenceM());
-    text += buf;
+    text += std::format(", {:.3f} m per rotation", w.circumferenceM());
     if (w.estimated)
         text += " (inner diameter estimated: measure it and set diameter for accuracy)";
     return text;

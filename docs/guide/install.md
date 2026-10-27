@@ -6,22 +6,26 @@ The hardware, installing the package, and upgrading or removing it.
 
 | Part | Notes |
 |---|---|
-| Raspberry Pi Zero 2 W | Raspberry Pi OS bookworm (64-bit) or later, on WiFi |
+| Raspberry Pi Zero 2 W | Raspberry Pi OS trixie (64-bit) or later, on WiFi |
 | Waveshare 2.13" Touch e-Paper HAT | The V4 panel with the GT1151 touch controller. Enable SPI and I²C (`sudo raspi-config` → Interface Options) |
 | Bluetooth LE cadence sensor | Any Cycling Speed and Cadence sensor with crank data; built against a Garmin cadence sensor |
 | Cat wheel | Presets for the Ferris Cat Wheel G5, Grand Ferris, One Fast Cat and Star Cat L and XL; any wheel works once its diameter is set ([configuration](configuration.md)) |
 
 ## Install the package
 
-Build the package on the Pi and install it:
+Build the package on an arm64 machine with podman or docker (an
+Apple-silicon Mac, for example), copy it to the Pi and install it:
 
 ```sh
-git clone <this repo> ~/workspace/purrdometer && cd ~/workspace/purrdometer
-sudo apt install build-essential pkg-config libsdbus-c++-dev libsqlite3-dev dpkg-dev \
-    libcpp-httplib-dev nlohmann-json3-dev python3-pil python3-spidev python3-smbus2 python3-gpiozero python3-lgpio fonts-dejavu-core
-packaging/build-deb.sh     # about 7 minutes the first time on a Pi Zero
-sudo apt install ./dist/purrdometer_*_arm64.deb
+git clone https://github.com/marek/purrdometer && cd purrdometer
+packaging/build-in-container.sh                 # about 20 seconds
+scp dist/purrdometer_*_arm64.deb whiskerwheel:
+ssh whiskerwheel 'sudo apt install ./purrdometer_*_arm64.deb'
 ```
+
+Building on the Pi itself also works (`packaging/build-deb.sh`, after
+installing the packages listed in `packaging/Containerfile`), but a full build
+takes over ten minutes there.
 
 That is the whole setup. The package:
 

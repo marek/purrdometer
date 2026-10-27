@@ -23,6 +23,13 @@ configure_bluez() {
     systemctl start bluetooth.service 2>/dev/null || true
 }
 
+# Bluetooth must not be soft-blocked; systemd-rfkill keeps this across reboots.
+unblock_bluetooth() {
+    for r in /sys/class/rfkill/rfkill*; do
+        [ -f "$r/type" ] && [ "$(cat "$r/type")" = bluetooth ] && echo 0 > "$r/soft" 2>/dev/null || true
+    done
+}
+
 if [ "$1" = configure ]; then
     if ! getent passwd purrdometer >/dev/null; then
         adduser --system --group --home /var/lib/purrdometer \
@@ -30,6 +37,7 @@ if [ "$1" = configure ]; then
     fi
     install -d -o purrdometer -g purrdometer -m 0755 /var/lib/purrdometer
     configure_bluez
+    unblock_bluetooth
     # NetworkManager applies the powersave conf on the next connection; apply it now too.
     if command -v iwconfig >/dev/null 2>&1; then iwconfig wlan0 power off 2>/dev/null || true
     elif [ -x /usr/sbin/iwconfig ]; then /usr/sbin/iwconfig wlan0 power off 2>/dev/null || true; fi

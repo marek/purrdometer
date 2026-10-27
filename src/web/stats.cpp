@@ -27,14 +27,7 @@ std::pair<std::string, std::vector<DayCount>> Stats::buckets(cal::Day today, int
     bool weekly = span <= 7L * maxBars;
     std::map<cal::Day, long long> grouped;
     for (auto [d, r] : days(*firstDay, today)) {
-        cal::Day key;
-        if (weekly) {
-            key = d - cal::weekday(d);
-        } else {
-            auto c = cal::toCivil(d);
-            key = cal::fromCivil(c.y, c.m, 1);
-        }
-        grouped[key] += r;
+        grouped[weekly ? d - cal::weekday(d) : cal::firstOfMonth(d)] += r;
     }
     return {weekly ? "week" : "month", {grouped.begin(), grouped.end()}};
 }

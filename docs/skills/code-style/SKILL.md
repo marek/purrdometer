@@ -1,6 +1,6 @@
 ---
 name: code-style
-description: Comment, prose, naming and coding conventions for purrdometer (C++17 logger source and Python display source, plus the docs/intents corpus) - use before writing or reviewing comments, before writing or editing any intent doc, when choosing a name for a new file, function or type, and before checking BLE or D-Bus handling against the BlueZ reference.
+description: Comment, prose, naming and coding conventions for purrdometer (C++26 logger and web source and Python display source, plus the docs/intents corpus) - use before writing or reviewing comments, before writing or editing any intent doc, when choosing a name for a new file, function or type, and before checking BLE or D-Bus handling against the BlueZ reference.
 ---
 
 # Code style
@@ -76,10 +76,16 @@ Before finishing a comment or a doc paragraph, cut:
   building up to it.
 - **Narrating a table before the table** — point at it.
 
-## C++17 conventions
+## C++26 conventions
 
-- Use C++17 features freely (`std::optional`, `std::string_view`,
-  structured bindings, `if constexpr`). This is not C++11.
+- The build is `-std=c++26` on GCC 14 (Raspberry Pi OS trixie). Use the
+  standard library where it says the thing directly: `std::format` for
+  text (never `snprintf` into a buffer), `std::chrono` calendar types for
+  dates, `starts_with` / `contains`, `std::ranges` algorithms,
+  `std::from_chars` for numbers, `std::scoped_lock`, `std::numbers::pi`.
+- A newer feature is used where it makes the code clearer, not to show
+  it off; GCC 14's C++26 support is partial, so check before relying on
+  a C++26 library facility.
 - D-Bus signal handlers are registered through sdbus-c++ proxy objects
   and deregistered when the proxy is destroyed; never hold a raw
   callback pointer past the object's lifetime.

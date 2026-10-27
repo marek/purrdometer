@@ -5,7 +5,7 @@
 
 ## Requirement
 
-One `.deb` installs a working purrdometer on a Raspberry Pi OS (bookworm or
+One `.deb` installs a working purrdometer on a Raspberry Pi OS (trixie or
 later) Pi: all three services enabled and running, and every system setting they
 need applied. No setting outside the package's own files is ever made by
 hand. Remove stops the services; purge also undoes the system settings. The
@@ -41,6 +41,7 @@ their state directory.
 | `ConnectionSupervisionTimeout = 600` under `[LE]`, after a `# purrdometer:` marker line | `/etc/bluetooth/main.conf` | [../ble/link.md](../ble/link.md); BlueZ 5.66 reads no drop-in directory, so the line goes into `main.conf` itself |
 | Cached `[ConnectionParameters]` cleared, once, when the setting is first added | `/var/lib/bluetooth/*/*/info` | A cached per-device value overrides the default |
 | `wifi.powersave = 2` | the NetworkManager drop-in | [../ble/link.md](../ble/link.md) |
+| Bluetooth not soft-blocked (rfkill), on every install and upgrade | `/sys/class/rfkill`, kept by systemd-rfkill | Without it BlueZ cannot power the adapter; an OS upgrade can leave it blocked |
 | The `purrdometer` system user and group | `adduser` | Services run unprivileged |
 
 ## Guarantees

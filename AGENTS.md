@@ -3,9 +3,9 @@
 INTENT: docs/intents/
 
 Rules and heuristics for AI agents working on purrdometer: a cat-wheel
-odometer on a Raspberry Pi Zero 2 W. A C++17 BlueZ client logs a Bluetooth LE
+odometer on a Raspberry Pi Zero 2 W. A C++26 BlueZ client logs a Bluetooth LE
 cadence sensor's rotations to SQLite; a Python program shows them on a 2.13"
-touch e-paper HAT; a C++17 web server (cpp-httplib, `.page` templates
+touch e-paper HAT; a C++26 web server (cpp-httplib, `.page` templates
 compiled to C++) shows them in a browser; a `.deb` installs all three and
 configures the system. No PHP, under any circumstances. Re-read
 when about to do something expensive (a BLE change, a schema change, a
@@ -208,7 +208,7 @@ them into `.claude/skills`.
 | `writing-context` | Before writing a plan's Context, an intent's requirement, a commit body or a brief for another agent: the goal and its constraints in plain words, never a transcript of the session. |
 | `incremental-commits` | Before any `git commit` in this repo. |
 | `intent-docs` | Before writing or editing anything under `docs/intents/`. |
-| `code-style` | Comments, doc prose, naming, C++17, template and Python conventions. |
+| `code-style` | Comments, doc prose, naming, C++26, page and Python conventions. |
 | `verification` | Before reporting any fix or feature complete; before and after any test run. |
 | `scratch-space` | Before creating any temporary file, download or clone: everything goes under the git-ignored `tmp/` here. |
 | `debugging-discipline` | A repeated bug report, a dropped link, a timing bug, a failure that looks like a regression. |

@@ -1,6 +1,6 @@
 CXX ?= g++
 CXXFLAGS ?= -O2 -g
-CXXFLAGS += -std=c++17 -Wall -Wextra -Isrc -I$(BUILD)/gen
+CXXFLAGS += -std=c++26 -Wall -Wextra -Isrc -I$(BUILD)/gen
 
 BUILD = build
 PURR_TMP ?= $(CURDIR)/tmp
@@ -11,7 +11,8 @@ WEB = bin/purrdometer-web
 PAGEC = bin/pagec
 
 LOGGER_PKGS = sdbus-c++ sqlite3
-WEB_PKGS = cpp-httplib sqlite3 nlohmann_json
+# cpp-httplib is built with TLS, zlib and brotli support; its .pc file leaves their libraries out.
+WEB_PKGS = cpp-httplib sqlite3 nlohmann_json openssl zlib libbrotlienc libbrotlidec
 
 # Pages: web/pages/<name>.page -> purr::pages::<name>() in build/gen/.
 PAGES = $(wildcard web/pages/*.page)
@@ -33,6 +34,10 @@ $(PAGEC): src/tools/pagec.cpp
 $(BUILD)/gen/%.page.cpp $(BUILD)/gen/%.page.h: web/pages/%.page $(PAGEC)
 	@mkdir -p $(@D)
 	$(PAGEC) $< $(BUILD)/gen/$*.page.cpp $(BUILD)/gen/$*.page.h
+
+# Generated pages.
+$(BUILD)/gen/%.o: $(BUILD)/gen/%.cpp
+	$(CXX) $(CXXFLAGS) -MMD -MP -c -o $@ $<
 
 # Every web object may include a generated header, so they wait for all of them.
 $(BUILD)/%.o: %.cpp | $(GEN_HDRS)

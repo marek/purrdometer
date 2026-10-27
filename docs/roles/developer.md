@@ -26,7 +26,7 @@ and code agreeing with each other.
 - Adds or extends a test so the change is covered: a `--selftest` case
   for logger logic, a Python unittest for display logic, a `make
   preview` check for layout.
-- Writes C++17 in the tree's conventions (`code-style` skill):
+- Writes C++26 in the tree's conventions (`code-style` skill):
   sdbus-c++ proxies for BLE, `std::unique_ptr` for ownership, named
   constants for magic numbers; keeps a file to one responsibility.
 - Reads the BlueZ D-Bus API and the Bluetooth CSC profile specification

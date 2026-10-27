@@ -5,15 +5,18 @@
 
 ## Requirement
 
-Everything builds on the Pi itself (Raspberry Pi OS bookworm, arm64) with
-Debian packages only: no pip, no vendored libraries, no PHP. Every behaviour is
+Everything builds with Debian trixie packages only (no pip, no vendored
+libraries, no PHP), either in a trixie arm64 container
+(`packaging/build-in-container.sh`, the normal way) or on the Pi itself, where
+the same commands work but a full build takes over ten minutes. Every behaviour is
 proven on a venue below before it is called done.
 
 ## Build dependencies
 
 | For | Debian packages |
 |---|---|
-| Logger | `build-essential`, `pkg-config`, `libsdbus-c++-dev`, `libsqlite3-dev` |
+| Toolchain | GCC 14 from trixie, `-std=c++26`; trixie is the oldest release that has it |
+| Logger | `build-essential`, `pkg-config`, `libsdbus-c++-dev`, `libsqlite3-dev` | (sdbus-c++ 2) |
 | Web dashboard | `libcpp-httplib-dev`, `nlohmann-json3-dev`, `libsqlite3-dev` |
 | Display | `python3-pil`, `python3-spidev`, `python3-smbus2`, `python3-gpiozero`, `python3-lgpio`, `fonts-dejavu-core` |
 | Package | `dpkg-dev` |
