@@ -1,0 +1,19 @@
+[Unit]
+Description=purrdometer BLE cadence logger
+After=bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+User=purrdometer
+Group=purrdometer
+SupplementaryGroups=bluetooth
+StateDirectory=purrdometer
+ExecStart=/usr/bin/purrdometer-logger --db /var/lib/purrdometer/purrdometer.db --sensor-file /var/lib/purrdometer/sensor
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

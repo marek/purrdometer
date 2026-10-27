@@ -1,0 +1,40 @@
+#!/bin/sh
+set -e
+
+MARK="# purrdometer: 6 s LE supervision timeout (see /usr/share/doc/purrdometer/README.md)"
+MAIN_CONF=/etc/bluetooth/main.conf
+
+configure_bluez() {
+    [ -f "$MAIN_CONF" ] || return 0
+    grep -qF "$MARK" "$MAIN_CONF" && return 0
+    # Replace any active setting (e.g. from an earlier manual setup) with ours.
+    sed -i '/^ConnectionSupervisionTimeout *=/d' "$MAIN_CONF"
+    if grep -q '^\[LE\]' "$MAIN_CONF"; then
+        sed -i "s|^\[LE\]\$|[LE]\n$MARK\nConnectionSupervisionTimeout = 600|" "$MAIN_CONF"
+    else
+        printf '\n[LE]\n%s\nConnectionSupervisionTimeout = 600\n' "$MARK" >> "$MAIN_CONF"
+    fi
+    # BlueZ caches per-device connection parameters; they override the default.
+    systemctl stop bluetooth.service 2>/dev/null || true
+    for info in /var/lib/bluetooth/*/*/info; do
+        [ -f "$info" ] || continue
+        sed -i '/^\[ConnectionParameters\]/,/^\[/{/^\[ConnectionParameters\]/d;/^\[/!d}' "$info"
+    done
+    systemctl start bluetooth.service 2>/dev/null || true
+}
+
+if [ "$1" = configure ]; then
+    if ! getent passwd purrdometer >/dev/null; then
+        adduser --system --group --home /var/lib/purrdometer \
+            --gecos "purrdometer" purrdometer >/dev/null
+    fi
+    install -d -o purrdometer -g purrdometer -m 0755 /var/lib/purrdometer
+    configure_bluez
+    # NetworkManager applies the powersave conf on the next connection; apply it now too.
+    if command -v iwconfig >/dev/null 2>&1; then iwconfig wlan0 power off 2>/dev/null || true
+    elif [ -x /usr/sbin/iwconfig ]; then /usr/sbin/iwconfig wlan0 power off 2>/dev/null || true; fi
+    systemctl daemon-reload
+    systemctl enable purrdometer-logger.service purrdometer-display.service purrdometer-web.service >/dev/null 2>&1
+    systemctl restart purrdometer-logger.service purrdometer-display.service purrdometer-web.service || true
+fi
+exit 0

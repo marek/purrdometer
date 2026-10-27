@@ -1,0 +1,27 @@
+[Unit]
+Description=purrdometer web dashboard
+After=network-online.target purrdometer-logger.service
+Wants=network-online.target
+
+[Service]
+User=purrdometer
+Group=purrdometer
+StateDirectory=purrdometer
+ExecStart=/usr/bin/purrdometer-web
+Restart=always
+RestartSec=5
+# Read-only over the database; nothing else to touch.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=64M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

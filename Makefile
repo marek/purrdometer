@@ -65,6 +65,9 @@ serve: all
 	cd python && PURR_WHEELS=../data/wheels.ini python3 -c "from purrdometer import data; data.make_demo_db('$(PURR_TMP)/demo.db')"
 	$(WEB) --db $(PURR_TMP)/demo.db --wheels data/wheels.ini --config /dev/null --port 8081
 
+deb:
+	packaging/build-deb.sh
+
 # Original prototype pairing tool.
 legacy: pair.cpp
 	@mkdir -p bin
@@ -73,6 +76,6 @@ legacy: pair.cpp
 clean:
 	rm -rf $(BUILD) $(LOGGER) $(WEB) $(PAGEC) bin/pair
 
-.PHONY: all test preview media serve legacy clean
+.PHONY: all test preview media serve deb legacy clean
 
 -include $(WEB_OBJS:.o=.d)
