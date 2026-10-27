@@ -1,0 +1,131 @@
+<%# The dashboard: the same history as the e-paper screens. Compiled to C++ by pagec. -%>
+<%@ include "web/dashboard.h" %>
+<%@ param const purr::Dashboard& v %>
+<% using namespace purr; using namespace purr::web; -%>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="<%= v.running ? 5 : 30 %>">
+<title>purrdometer · <%= km(v.totalKm) %> km</title>
+<style>
+:root { --fg: #1b1b1b; --muted: #6b6b6b; --bg: #faf8f5; --card: #fff; --line: #e6e1da;
+        --c1: #f3d9b1; --c2: #e9b36b; --c3: #d9822b; --c4: #a8551a; }
+@media (prefers-color-scheme: dark) {
+  :root { --fg: #eee; --muted: #9a9a9a; --bg: #161514; --card: #201f1d; --line: #33312e;
+          --c1: #4a3520; --c2: #7a4d22; --c3: #b56a25; --c4: #e89140; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+main { max-width: 860px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { font-size: 20px; margin: 0 0 16px; }
+h1 small, .muted { color: var(--muted); font-weight: normal; }
+h2 { font-size: 15px; margin: 0 0 10px; }
+h2 span { color: var(--muted); font-weight: normal; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.card, section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+section { margin-bottom: 12px; }
+.label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.big { font-size: 30px; font-weight: 700; }
+.running { color: var(--c3); }
+.error { border-color: var(--c3); }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--muted); font-size: 11px; }
+.bar { fill: var(--c3); } .bar.today { fill: var(--c2); } .cum { fill: none; stroke: var(--fg); stroke-width: 2; }
+.l0 { fill: var(--line); } .l1 { fill: var(--c1); } .l2 { fill: var(--c2); } .l3 { fill: var(--c3); } .l4 { fill: var(--c4); }
+.todaycell { stroke: var(--fg); stroke-width: 1.5; }
+footer { color: var(--muted); font-size: 13px; margin-top: 16px; }
+a { color: var(--c3); }
+</style>
+</head>
+<body>
+<main>
+<h1>purrdometer <small>· <%= v.wheel.name %></small></h1>
+<% for (auto& e : v.configErrors) { -%>
+<section class="error">Config: <%= e %></section>
+<% } -%>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Rotations</div>
+    <div class="big"><%= thousands(v.totalRevs) %></div>
+    <div class="muted"><% if (v.firstDay) { %>since <%= cal::longDate(*v.firstDay) %><% } else { %>no rotations yet<% } %></div>
+  </div>
+  <div class="card">
+    <div class="label">Distance</div>
+    <div class="big"><%= km(v.totalKm) %> km</div>
+    <div class="muted"><%= v.activeDays %> active days · best <%= km(v.bestKm) %> km</div>
+  </div>
+  <div class="card">
+    <div class="label">Today</div>
+    <div class="big"><%= km(v.todayKm) %> km</div>
+    <div class="muted"><%= thousands(v.todayRevs) %> rotations</div>
+  </div>
+  <div class="card">
+<% if (v.running) { -%>
+    <div class="label running">▶ Running</div>
+    <div class="big running"><%= fixed(v.kmh, 1) %> km/h</div>
+    <div class="muted"><%= v.rpm %> rpm</div>
+<% } else { -%>
+    <div class="label">Last run</div>
+    <div class="big"><%= v.lastMotionAgo ? ago(*v.lastMotionAgo) : "never" %></div>
+<% } -%>
+    <div class="muted">sensor <%= v.connected ? "connected" : "asleep" %><% if (v.battery) { %> · battery <%= *v.battery %>%<% } %></div>
+  </div>
+</div>
+
+<section>
+  <h2>Last 30 days <span>· <%= km(v.last30Km) %> km · avg <%= km(v.last30AvgKm) %> km/day · <%= v.last30Active %> active</span></h2>
+<% { const double W = 600, H = 120, slot = W / v.last30.size(); -%>
+  <svg viewBox="0 0 <%= fixed(W, 0) %> <%= fixed(H + 18, 0) %>" role="img" aria-label="Distance per day for the last 30 days">
+<% for (size_t i = 0; i < v.last30.size(); ++i) { const auto& b = v.last30[i]; double h = b.height * H; -%>
+    <rect class="bar<%= b.today ? " today" : "" %>" x="<%= fixed(i * slot + 1, 1) %>" y="<%= fixed(H - h, 1) %>" width="<%= fixed(slot - 2, 1) %>" height="<%= fixed(h, 1) %>"><title><%= b.label %>: <%= km(b.km) %> km</title></rect>
+<%   if (!b.tick.empty()) { -%>
+    <text x="<%= fixed(i * slot + 1, 1) %>" y="<%= fixed(H + 14, 0) %>"><%= b.tick %></text>
+<%   } -%>
+<% } -%>
+  </svg>
+<% } -%>
+</section>
+
+<section>
+  <h2>Calendar <span>· the last year, stronger colour is further</span></h2>
+<% { const int pitch = 13, cell = 11, left = 26, top = 16; -%>
+  <svg viewBox="0 0 <%= left + purr::Dashboard::CALENDAR_WEEKS * pitch %> <%= top + 7 * pitch %>" role="img" aria-label="Distance per day over the last year">
+<% for (auto& [week, name] : v.calendarMonths) { -%>
+    <text x="<%= left + week * pitch %>" y="11"><%= name %></text>
+<% } -%>
+    <text x="0" y="<%= top + 0 * pitch + 9 %>">Mon</text><text x="0" y="<%= top + 2 * pitch + 9 %>">Wed</text><text x="0" y="<%= top + 4 * pitch + 9 %>">Fri</text>
+<% for (auto& c : v.calendar) { -%>
+    <rect class="l<%= c.level %><%= c.today ? " todaycell" : "" %>" x="<%= left + c.week * pitch %>" y="<%= top + c.weekday * pitch %>" width="<%= cell %>" height="<%= cell %>" rx="2"><title><%= cal::longDate(c.day) %>: <%= km(c.km) %> km</title></rect>
+<% } -%>
+  </svg>
+<% } -%>
+</section>
+
+<section>
+  <h2>All time <span>· per <%= v.historyUnit %>, line is total distance</span></h2>
+<% if (v.history.empty()) { -%>
+  <p class="muted">No rotations yet.</p>
+<% } else { const double W = 600, H = 120, slot = W / v.history.size(); -%>
+  <svg viewBox="0 0 <%= fixed(W, 0) %> <%= fixed(H + 18, 0) %>" role="img" aria-label="Distance per <%= v.historyUnit %> since the first day">
+<%   std::string points = "0," + fixed(H, 1); -%>
+<%   for (size_t i = 0; i < v.history.size(); ++i) { const auto& b = v.history[i]; double h = b.height * H; -%>
+    <rect class="bar" opacity="0.55" x="<%= fixed(i * slot + 1, 1) %>" y="<%= fixed(H - h, 1) %>" width="<%= fixed(std::max(1.0, slot - 2), 1) %>" height="<%= fixed(h, 1) %>"><title><%= b.label %>: <%= km(b.km) %> km</title></rect>
+<%     if (!b.tick.empty()) { -%>
+    <text x="<%= fixed(i * slot + 1, 1) %>" y="<%= fixed(H + 14, 0) %>"><%= b.tick %></text>
+<%     } -%>
+<%     points += " " + fixed((i + 1) * slot, 1) + "," + fixed(H - b.cumulative * H, 1); -%>
+<%   } -%>
+    <polyline class="cum" points="<%= points %>"/>
+  </svg>
+<% } -%>
+</section>
+
+<footer>
+  <%= describe(v.wheel, v.units) %> · updated <%= cal::longDate(cal::localDay(v.now)) %> · <a href="/api/stats">JSON</a>
+</footer>
+</main>
+</body>
+</html>
