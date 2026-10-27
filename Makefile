@@ -73,14 +73,9 @@ serve: all
 deb:
 	packaging/build-deb.sh
 
-# Original prototype pairing tool.
-legacy: pair.cpp
-	@mkdir -p bin
-	$(CXX) $(CXXFLAGS) $(shell pkg-config --cflags $(LOGGER_PKGS)) -o bin/pair pair.cpp $(shell pkg-config --libs $(LOGGER_PKGS)) -pthread
-
 clean:
-	rm -rf $(BUILD) $(LOGGER) $(WEB) $(PAGEC) bin/pair
+	rm -rf $(BUILD) $(LOGGER) $(WEB) $(PAGEC)
 
-.PHONY: all test preview media serve deb legacy clean
+.PHONY: all test preview media serve deb clean
 
 -include $(WEB_OBJS:.o=.d)

@@ -26,4 +26,4 @@ network by default. The rules are in
 - [x] The screen picks up saved settings before its next redraw
 - [x] Intents, guide, README and skills updated
 - [ ] Saving the wheel from a phone changes the dashboard and the screen (the user)
-- [ ] History starts from the files as they were before this work, and unused prototype code is removed
+- [x] History starts from the files as they were before this work, and unused prototype code is removed

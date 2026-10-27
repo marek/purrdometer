@@ -33,8 +33,7 @@ ehthumbs.db
 Thumbs.db
 
 # Various
-bin/*
-!bin/.*
+bin/
 # Build outputs
 dist/
 build/
