@@ -122,8 +122,8 @@ Handle the exceptional case first and return, so the main path stays flat.
   variables and members are `camelCase` (`loadStats`, `diameterM`);
   private data members end in an underscore (`connected_`); constants
   are `UPPER_SNAKE_CASE` (`MAX_REVS_PER_SECOND`); namespaces are
-  lowercase (`purr`, `purr::web`); files are kebab-case for programs
-  (`purrdometer-web.cpp`) and lowercase for modules (`wheel.cpp`). A
+  lowercase (`purr`, `purr::web`); files are `snake_case`, named for
+  the class or concept they hold (`touch_input.cpp`, `sensor_link.cpp`). A
   quantity's unit ends its name (`diameterM`, `lastWall`). No type prefix.
 - **A new name must not collide with an existing one.** Grep the
   source first — the headers and module exports are the contract.
@@ -132,11 +132,17 @@ Handle the exceptional case first and return, so the main path stays flat.
 
 ## Structure
 
-- A file mixing distinct responsibilities is a split candidate — check
-  while writing, not when asked. Each program's entry point is
-  `src/purrdometer-*.cpp`; what more than one program uses is in
-  `src/common/`; a program's own modules are in `src/display/` or
-  `src/web/`.
+- **One job per class, one class per header.** A class that gains a
+  second reason to change, or a file past about 300 lines, is split
+  while writing it, never later and never only when asked. The display's
+  loop decides what to show; the refresh policy, touch input, the boot
+  window and each screen are their own classes and files.
+- A program lives in its own folder (`src/logger/`, `src/display/`,
+  `src/web/`, `src/setup/`) with a `main.cpp` that only parses options,
+  builds the parts and runs them, and a `selftest.cpp`. What more than
+  one program uses is in `src/common/`. A program never includes
+  another program's folder. The full rules are in
+  [workspace/source-layout.md](../../intents/workspace/source-layout.md).
 - Two features that need the same behaviour share the implementation;
   the NOW screen and the 30-DAYS screen both read from SQLite through
   the same query helper.

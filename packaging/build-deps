@@ -14,4 +14,5 @@ libfreetype-dev
 libharfbuzz-dev
 libgpiod-dev
 libpng-dev
+libqrencode-dev
 fonts-dejavu-core

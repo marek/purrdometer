@@ -1,5 +1,5 @@
 <%# Settings: the wheel and the screen, saved to the web UI's overrides file. -%>
-<%@ include "web/settings.h" %>
+<%@ include "web/settings_view.h" %>
 <%@ include "head.page.h" %>
 <%@ include "foot.page.h" %>
 <%@ param const purr::SettingsView& v %>

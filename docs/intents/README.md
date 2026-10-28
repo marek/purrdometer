@@ -31,6 +31,7 @@ listing them.
 | [data/](data/) | Storage, turning sensor readings into rotations, wheels and distance |
 | [display/](display/) | The e-paper screens, the touch bar, the refresh policy |
 | [web/](web/) | The web dashboard and the templates its pages are written in |
+| [network/](network/) | Setup from a phone: the hotspot, the setup page, the privileged helper |
 | [bugs/](bugs/) | Bug case studies: the one place history is told |
 
 ## Docs
@@ -41,6 +42,7 @@ listing them.
 | [glossary.md](glossary.md) | Term disambiguation |
 | [workspace/repos.md](workspace/repos.md) | The single repo, identity, branches, pushing, what is committed |
 | [workspace/build-and-run.md](workspace/build-and-run.md) | Build dependencies, make targets, the testing venues, running on the Pi |
+| [workspace/source-layout.md](workspace/source-layout.md) | How the C++ source is divided: a folder per program, a class per job, a header per class, `main.cpp` only wiring |
 | [workspace/packaging.md](workspace/packaging.md) | The `.deb`: contents, version, maintainer scripts, the system settings it owns, install/remove/purge guarantees |
 | [ble/link.md](ble/link.md) | Keeping the BLE link up: supervision timeout, WiFi coexistence, unbonded use, reconnecting, discovery |
 | [ble/sensor.md](ble/sensor.md) | The CSC sensor as the logger uses it: services, the measurement, battery, which sensor is ours, mounting |
@@ -52,6 +54,7 @@ listing them.
 | [display/refresh.md](display/refresh.md) | When the panel redraws: partial vs full, ghosting, live updates, sleep |
 | [web/dashboard.md](web/dashboard.md) | `purrdometer-web`: the stack, routes, what the page shows, access, the service |
 | [web/settings.md](web/settings.md) | The gear page: what it changes, `settings.ini` over `/etc`, who may save (`lan`, `pin`, `open`, `off`), how changes are picked up |
+| [network/setup.md](network/setup.md) | Setup mode: when it starts and ends, the hotspot, the e-paper, the setup page, the helper |
 | [web/pages.md](web/pages.md) | `.page` files compiled to C++ by `pagec`: tags, escaping, formatters |
 | [bugs/supervision-timeout-drops.md](bugs/supervision-timeout-drops.md) | The link dropping every 7–16 s: a 420 ms supervision timeout on a ~200 ms interval |
 | [bugs/silent-to-a-central-it-remembers.md](bugs/silent-to-a-central-it-remembers.md) | A connected, subscribed sensor that sent nothing to the Pi alone: it remembered a pairing with the Pi's address |

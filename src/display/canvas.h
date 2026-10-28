@@ -1,46 +1,15 @@
-// A 1-bit drawing surface for the e-paper screens, with FreeType text.
+// A 1-bit drawing surface for the e-paper screens, with HarfBuzz-shaped text.
 // Coordinates are inclusive and in landscape pixels; colour true is black.
 #pragma once
 
-#include <map>
-#include <memory>
+#include "display/fonts.h"
+
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-struct FT_LibraryRec_;
-struct FT_FaceRec_;
-
 namespace purr::display {
-
-constexpr const char* FONT_DIR = "/usr/share/fonts/truetype/dejavu";
-
-class Fonts;
-
-// One face at one pixel size.
-struct Font {
-    Fonts* fonts = nullptr;
-    bool bold = false;
-    int size = 0;
-};
-
-// DejaVu Sans and Sans Bold, rendered monochrome: crisp on e-paper.
-class Fonts {
-public:
-    explicit Fonts(std::string dir = FONT_DIR);
-    ~Fonts();
-    Fonts(const Fonts&) = delete;
-    Fonts& operator=(const Fonts&) = delete;
-
-    Font get(int size, bool bold = false) { return {this, bold, size}; }
-    FT_FaceRec_* face(const Font& f); // sized for f
-
-private:
-    FT_LibraryRec_* library_ = nullptr;
-    FT_FaceRec_* regular_ = nullptr;
-    FT_FaceRec_* bold_ = nullptr;
-};
 
 class Canvas {
 public:
@@ -56,6 +25,8 @@ public:
     void outline(int x0, int y0, int x1, int y1, bool black = true);
     void line(int x0, int y0, int x1, int y1, bool black = true, int width = 1);
     void polyline(const std::vector<std::pair<int, int>>& points, bool black = true, int width = 1);
+    // An arc of radius r around (cx, cy) from a0 to a1 degrees, 0 = right, counterclockwise.
+    void arc(int cx, int cy, int r, double a0, double a1, int width = 1, bool black = true);
     // 0 nothing, 1 light, 2 half, 3 dark, 4 solid: 1-bit dither patterns.
     void shade(int x0, int y0, int x1, int y1, int level);
 
@@ -69,8 +40,5 @@ private:
     int w_, h_;
     std::vector<unsigned char> px_; // one byte per pixel; 1 is black
 };
-
-// UTF-8 to code points; invalid bytes become U+FFFD.
-std::vector<char32_t> decodeUtf8(std::string_view s);
 
 } // namespace purr::display

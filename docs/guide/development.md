@@ -12,7 +12,7 @@ skills and roles beside it.
 
 | Folder | What |
 |---|---|
-| `src/` | `purrdometer-logger.cpp` (the BlueZ client, rotation accounting, SQLite writer); `purrdometer-display.cpp` (the e-paper loop) with `display/` (screens, canvas and text, panel and touch drivers, PNG); `purrdometer-web.cpp` (the dashboard server) with `web/`; `common/` (config, wheels, the database, formats, calendar days); `tools/pagec.cpp` (the page compiler) |
+| `src/` | A folder per program, each with `main.cpp` and `selftest.cpp`: `logger/` (measurement parsing, accounting, the SQLite store, the BlueZ adapter and sensor link, the monitor loop); `display/` (pins, panel and touch drivers, canvas and fonts, `screens/` one file each, taps and holds, the refresh policy, the boot window, the app loop); `web/` (the server, a module per group of routes, the save guard); `setup/` (commands, NetworkManager, the login account, setup mode's state machine). `common/` holds what several use (config, wheels, the database reader, formats, calendar days, file watching, setup mode's shared files); `tools/pagec.cpp` is the page compiler. [workspace/source-layout.md](../intents/workspace/source-layout.md) has the rules |
 | `web/pages/` | The dashboard's pages as `.page`, compiled to C++ ([templates](../intents/web/pages.md)) |
 | `data/wheels.ini` | The wheel presets, read by both the screen and the dashboard |
 | `packaging/` | `build-deb.sh`, the Debian control file and maintainer scripts, the systemd units, the default config |

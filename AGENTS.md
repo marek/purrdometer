@@ -27,7 +27,7 @@ Three co-equal artifacts; each keeps the others honest.
 |---|---|---|
 | **Intent** | `docs/intents/` | Normative design specs. The end-state contract: what purrdometer *is*, why, and the invariants the running code depends on. |
 | **Tests** | `make test` (`--selftest` of the logger, the web server and the display), `make preview`, `make serve` | The three programs' self-tests, every screen rendered to PNG and the dashboard served from made-up history; see Testing venues below. |
-| **Implementation** | `src/`, `web/pages/`, `data/`, `packaging/`, `system/` | The logger, the display, the web dashboard and its pages, the wheel presets, the package. |
+| **Implementation** | `src/`, `web/pages/`, `data/`, `packaging/`, `system/` | The logger, the display, the web dashboard and its pages, the setup helper, the wheel presets, the package. A folder per program, one job per class ([source-layout](docs/intents/workspace/source-layout.md)). |
 
 `docs/intents/` is a **first-class artifact, not supplementary docs**. When
 the spec and the code disagree, one of them drifted. Your job is to figure
