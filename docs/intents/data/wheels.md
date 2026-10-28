@@ -34,7 +34,7 @@ is an estimate and the preset says so.
 
 | Key | Wheel | Running diameter | Outer | Track | Per rotation | Source |
 |---|---|---|---|---|---|---|
-| `ferris-g5` | Ferris Cat Wheel G5 | 48 in | 51 in | 12.5 in | 3.830 m | [ferriscatwheelinternational.com](https://ferriscatwheelinternational.com/wheel.php) |
+| `ferris-g5` | Ferris Cat Wheel G5 | 48 in | 51 in | 12.5 in | 3.830 m | [ferriscatwheel.com](https://www.ferriscatwheel.com/pages/ferris-cat-exercise-wheel-gen5) |
 | `grand-ferris` | Grand Ferris Cat Wheel | 60 in | 63 in | 15 in | 4.788 m | [ferriscatwheel.com](https://www.ferriscatwheel.com/pages/grand-ferris-cat-exercise-wheel) |
 | `one-fast-cat` | One Fast Cat (Gen 7) | 43 in | 48 in | | 3.431 m | [onefastcat.com](https://onefastcat.com/products/cat-wheel) |
 | `star-cat-l` | Star Cat Wheel L | ~38.5 in, estimated | 41.7 in | 15.7 in | 3.072 m | [starcatwheel.com](https://starcatwheel.com) |

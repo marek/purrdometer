@@ -14,8 +14,6 @@ Four screens, chosen from the touch bar along the bottom edge.
 ![CALENDAR](../media/2-calendar.png)
 ![ALL TIME](../media/3-alltime.png)
 
-*Rendered from made-up history.*
-
 ## The touch bar
 
 Tap a tab to switch to it. The current tab is shown in white on black. If the

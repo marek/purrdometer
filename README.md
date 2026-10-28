@@ -30,8 +30,6 @@ Four screens, picked from the touch bar along the bottom edge.
 </tr>
 </table>
 
-<sub>Rendered from made-up history by `make media`.</sub>
-
 ## Web
 
 You can also view history in a browser at http://whiskerwheel:8080. It's served by a tiny C++ binary that compiles pages directly into C++—taking up a few megabytes of RAM and responding in tens of milliseconds, even on a Pi Zero.

@@ -6,8 +6,6 @@ The same history as the screen, in a browser on your home network:
 
 ![The dashboard: totals, today and live speed, the last 30 days, a year of days, and all time with total distance rising](../media/web.png)
 
-*Rendered from made-up history.*
-
 | Part | Shows |
 |---|---|
 | Cards | Total rotations and since when; total distance, active days and the best day; today; live speed while the wheel turns, otherwise when the last run was; the sensor and its battery |
