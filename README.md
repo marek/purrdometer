@@ -12,9 +12,19 @@ An odometer for a cat wheel: tracking distance, speed, and "you won't let me out
 
 ## Why
 
+<table>
+<tr>
+<td>
+
 My cat, Murder Mittens, runs further than you'd guess. She's on her wheel constantly: when she wakes up, after eating, post-poop zoom-zooms, or when she's angry because she's not allowed outside.
 
 `purrdometer` straps a Bluetooth cadence sensor to the 6-ft hamster wheel in my living room and hooks up a small e-paper display beside it. This lets me keep track of how many rotations she logged, how far she actually ran, and how her physical activity is somehow higher than mine on any given day.
+
+</td>
+<td width="200"><img src="docs/media/mittens1.jpg" width="200" alt="Murder Mittens looking up a tree"></td>
+<td width="200"><img src="docs/media/mittens2.jpg" width="200" alt="Murder Mittens looking like a bad taxidermy"></td>
+</tr>
+</table>
 
 ## Screens
 
@@ -82,3 +92,5 @@ implementation. Start with [AGENTS.md](AGENTS.md) and
 ## License
 
 [Apache-2.0](LICENSE.md).
+
+<p align="center"><img width="200" src="docs/media/wheel.jpg" alt="Murder Mittens running on her wheel"></p>
