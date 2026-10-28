@@ -28,6 +28,7 @@ struct Editable {
     int activeRefreshS = 5;
     int idleRefreshS = 60;
     std::optional<std::string> sensor; // a sensor's address; empty for the first one heard
+    int wakeTurns = 2; // turns the sensor misses waking up (docs/intents/data/accounting.md)
 };
 
 struct Config {
@@ -56,7 +57,10 @@ const char* accessName(SettingsAccess a);
 // "AA:BB:CC:DD:EE:FF", uppercase; nullopt if s is not a Bluetooth address.
 std::optional<std::string> normalizeAddress(const std::string& s);
 
-// The sensor the settings choose, for the logger, which needs nothing else from them.
+// The editable values alone, without wheel presets: what the logger reads.
+Editable loadEditable(const std::string& conf = CONFIG_PATH, const std::string& overrides = OVERRIDES_PATH);
+
+// The sensor the settings choose.
 std::optional<std::string> sensorChoice(const std::string& conf = CONFIG_PATH,
                                         const std::string& overrides = OVERRIDES_PATH);
 

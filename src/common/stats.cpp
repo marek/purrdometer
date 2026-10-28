@@ -48,21 +48,27 @@ Stats loadStats(const std::string& dbPath, cal::Day today)
     auto query = [&](const char* sql, auto&& row) {
         sqlite3_stmt* st = nullptr;
         if (sqlite3_prepare_v2(db.get(), sql, -1, &st, nullptr) != SQLITE_OK)
-            return; // no schema yet
+            return false; // no schema yet, or an older one
         while (sqlite3_step(st) == SQLITE_ROW)
             row(st);
         sqlite3_finalize(st);
+        return true;
     };
     auto str = [](sqlite3_stmt* st, int i) {
         auto t = sqlite3_column_text(st, i);
         return t ? std::string(reinterpret_cast<const char*>(t)) : std::string();
     };
 
-    query("SELECT date(minute * 60, 'unixepoch', 'localtime'), SUM(revs) FROM minutes GROUP BY 1", [&](sqlite3_stmt* st) {
+    auto day = [&](sqlite3_stmt* st) {
         long long revs = sqlite3_column_int64(st, 1);
         if (revs > 0)
             s.daily[cal::fromIso(str(st, 0))] = revs;
-    });
+        s.estimated += sqlite3_column_int64(st, 2);
+    };
+    if (!query("SELECT date(minute * 60, 'unixepoch', 'localtime'), SUM(revs + estimated), SUM(estimated) "
+               "FROM minutes GROUP BY 1",
+               day))
+        query("SELECT date(minute * 60, 'unixepoch', 'localtime'), SUM(revs), 0 FROM minutes GROUP BY 1", day);
     query("SELECT key, value FROM state", [&](sqlite3_stmt* st) {
         std::string key = str(st, 0), value = str(st, 1);
         try {

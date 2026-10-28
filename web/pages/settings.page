@@ -104,6 +104,11 @@
 <% } -%>
   </div>
 
+  <h2>Missed turns <span>· added as an estimate, kept apart from the measured count</span></h2>
+  <label for="wake">Turns the sensor misses waking up</label>
+  <input id="wake" name="wake_turns" type="number" min="0" max="10" value="<%= e.wakeTurns %>">
+  <p class="hint">A sleeping sensor misses its first couple of turns. Added at the first turn it counts after waking; 0 counts only what it measures.</p>
+
   <h2>Test <span>· nothing is saved</span></h2>
   <div class="row">
     <button type="button" class="secondary" id="test">Start test</button>

@@ -204,6 +204,16 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     auto savedSensor = client.Post("/settings", withCookie, chosen);
     check(savedSensor && savedSensor->status == 303 && sensorChoice(conf, over) == "AA:BB:CC:DD:EE:FF",
           "a chosen sensor is saved for the logger");
+    auto tuned = form("115");
+    tuned.emplace("wake_turns", "3");
+    auto savedTurns = client.Post("/settings", withCookie, tuned);
+    Editable turns = loadEditable(conf, over);
+    check(savedTurns && savedTurns->status == 303 && turns.wakeTurns == 3,
+          "wake turns are saved for the logger");
+    tuned = form("115");
+    tuned.emplace("wake_turns", "11");
+    auto tooMany = client.Post("/settings", withCookie, tuned);
+    check(tooMany && tooMany->status == 400 && loadEditable(conf, over).wakeTurns == 3, "more than 10 is refused");
     srv.paths.scanRequest = tmpDir + "/selftest-scan-request";
     std::remove(srv.paths.scanRequest.c_str());
     auto scan = client.Post("/settings/scan", withCookie, httplib::Params{{"token", token}});

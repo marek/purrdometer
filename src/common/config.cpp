@@ -20,6 +20,7 @@ struct Range {
 constexpr Range FULL_REFRESH_EVERY{1, 200};
 constexpr Range ACTIVE_REFRESH_S{1, 60};
 constexpr Range IDLE_REFRESH_S{10, 3600};
+constexpr Range MISSED_TURNS{0, 10};
 
 std::string lower(const std::string& s) { return toLower(s); }
 
@@ -42,9 +43,9 @@ std::optional<int> parseInt(const std::string& v)
     return n;
 }
 
-std::string rangeError(const char* key, Range r)
+std::string rangeError(const char* key, Range r, const char* section = "display")
 {
-    return std::string("[display] ") + key + " must be a whole number from " + std::to_string(r.lo) + " to " +
+    return std::string("[") + section + "] " + key + " must be a whole number from " + std::to_string(r.lo) + " to " +
            std::to_string(r.hi);
 }
 
@@ -69,15 +70,16 @@ void apply(const Ini& ini, Editable& e, std::vector<std::string>& errors)
         else
             errors.push_back("[display] rotate180 must be true or false");
     }
-    auto number = [&](const char* key, int& field, Range r) {
-        if (auto v = ini.get("display", key)) {
+    auto number = [&](const char* key, int& field, Range r, const char* section = "display") {
+        if (auto v = ini.get(section, key)) {
             auto n = parseInt(*v);
             if (n && *n >= r.lo && *n <= r.hi)
                 field = *n;
             else
-                errors.push_back(rangeError(key, r));
+                errors.push_back(rangeError(key, r, section));
         }
     };
+    number("wake_turns", e.wakeTurns, MISSED_TURNS, "sensor");
     number("full_refresh_every", e.fullRefreshEvery, FULL_REFRESH_EVERY);
     number("active_refresh_s", e.activeRefreshS, ACTIVE_REFRESH_S);
     number("idle_refresh_s", e.idleRefreshS, IDLE_REFRESH_S);
@@ -108,7 +110,7 @@ std::optional<std::string> normalizeAddress(const std::string& s)
     return out;
 }
 
-std::optional<std::string> sensorChoice(const std::string& conf, const std::string& overrides)
+Editable loadEditable(const std::string& conf, const std::string& overrides)
 {
     Editable e;
     std::vector<std::string> ignored;
@@ -116,7 +118,12 @@ std::optional<std::string> sensorChoice(const std::string& conf, const std::stri
         apply(*ini, e, ignored);
     if (auto ini = Ini::load(overrides))
         apply(*ini, e, ignored);
-    return e.sensor;
+    return e;
+}
+
+std::optional<std::string> sensorChoice(const std::string& conf, const std::string& overrides)
+{
+    return loadEditable(conf, overrides).sensor;
 }
 
 const char* accessName(SettingsAccess a)
@@ -147,6 +154,8 @@ std::vector<std::string> validate(const Editable& e, const WheelPresets& presets
         problems.push_back(rangeError("active_refresh_s", ACTIVE_REFRESH_S));
     if (!in(e.idleRefreshS, IDLE_REFRESH_S))
         problems.push_back(rangeError("idle_refresh_s", IDLE_REFRESH_S));
+    if (!in(e.wakeTurns, MISSED_TURNS))
+        problems.push_back(rangeError("wake_turns", MISSED_TURNS, "sensor"));
     if (e.sensor && !normalizeAddress(*e.sensor))
         problems.push_back("the sensor is not a Bluetooth address: " + *e.sensor);
     return problems;
@@ -217,7 +226,8 @@ void saveOverrides(const Editable& e, const std::string& path)
             << "active_refresh_s = " << e.activeRefreshS << "\n"
             << "idle_refresh_s = " << e.idleRefreshS << "\n\n"
             << "[sensor]\n"
-            << "address = " << e.sensor.value_or("") << "\n";
+            << "address = " << e.sensor.value_or("") << "\n"
+            << "wake_turns = " << e.wakeTurns << "\n";
         out.flush();
         if (!out)
             throw std::runtime_error("cannot write " + tmp);

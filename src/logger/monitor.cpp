@@ -17,9 +17,16 @@ Monitor::Monitor(Store& store, const Paths& paths)
                    if (link_ && path == link_->path())
                        link_->lost();
                }),
-      counter_(store), choice_(paths), scanRequest_({paths.scanRequest})
+      counter_(store), paths_(paths), settings_({paths.config, paths.overrides}),
+      choice_(paths.sensorFile, sensorChoice(paths.config, paths.overrides)), scanRequest_({paths.scanRequest})
 {
+    applySettings(loadEditable(paths.config, paths.overrides));
     bus_->enterEventLoopAsync();
+}
+
+void Monitor::applySettings(const Editable& e)
+{
+    counter_.setWakeTurns(e.wakeTurns);
 }
 
 Monitor::~Monitor() { bus_->leaveEventLoop(); }
@@ -70,7 +77,11 @@ void Monitor::follow(const std::optional<std::string>& mac)
 
 void Monitor::followSettings()
 {
-    if (!choice_.changed())
+    if (!settings_.changed())
+        return;
+    Editable e = loadEditable(paths_.config, paths_.overrides);
+    applySettings(e);
+    if (!choice_.choose(e.sensor))
         return;
     auto target = choice_.target();
     if (link_ && target == link_->mac())
@@ -161,6 +172,8 @@ void Monitor::startNotify()
 
 void Monitor::publishConnected(bool c)
 {
+    if (c)
+        counter_.connected(firstConnection_.exchange(false));
     store_.setState("connected", c ? "1" : "0");
     if (!c)
         store_.setState("rpm", "0");

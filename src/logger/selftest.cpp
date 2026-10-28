@@ -3,9 +3,15 @@
 
 #include "logger/accounting.h"
 #include "logger/measurement.h"
+#include "logger/missed_turns.h"
 #include "logger/store.h"
 
+#include "common/calendar.h"
+#include "common/stats.h"
+
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
 using namespace purr::logger;
@@ -25,7 +31,11 @@ int selftest()
     a = account(Sample{Counter::Crank, 65535, 64000}, 100, {Counter::Crank, 1, 1000}, 101);
     check(a.delta == 2 && !a.reset, "16-bit crank counter wraps");
     a = account(Sample{Counter::Crank, 100, 0}, 100, {Counter::Crank, 5, 0}, 101);
-    check(a.reset && a.delta == 0, "counter going backwards = reset");
+    check(a.reset && a.delta == 5, "a restarted sensor's count is added");
+    a = account(Sample{Counter::Crank, 509, 0}, 100, {Counter::Crank, 8, 0}, 100 + 600);
+    check(a.reset && a.delta == 8, "509 -> 8 ten minutes later adds 8");
+    a = account(Sample{Counter::Crank, 509, 0}, 100, {Counter::Crank, 300, 0}, 101);
+    check(a.reset && a.delta == 0, "a restart count too high for the time is refused");
     a = account(Sample{Counter::Crank, 100, 0}, 100, {Counter::Crank, 1100, 0}, 101);
     check(a.reset, "implausible jump = reset");
     a = account(Sample{Counter::Crank, 100, 0}, 100, {Counter::Crank, 1100, 0}, 100 + 3600);
@@ -47,6 +57,19 @@ int selftest()
     check(!parseMeasurement({0x02, 0x2A, 0x00, 0x00, 0x08}, Counter::Wheel), "no wheel data for a speed sensor");
     check(!parseMeasurement({0x01, 0x01}, Counter::Wheel), "truncated measurement");
 
+    MissedTurns m;
+    m.configure(2);
+    m.connected(false);
+    check(m.estimate(0, false) == 0 && m.estimate(1, false) == 2, "wake turns at the first counted turn");
+    check(m.estimate(1, false) == 0, "none after it, however long the stop");
+    m.connected(true);
+    check(m.estimate(1, false) == 0, "a logger restart under an awake sensor adds nothing");
+    m.connected(true);
+    check(m.estimate(1, true) == 2, "the first connection after start, with the count back: a wake");
+    m.configure(0);
+    m.connected(false);
+    check(m.estimate(1, false) == 0, "off at 0");
+
     Store mem(":memory:");
     mem.record(120.5, {Counter::Crank, 5, 0}, 3);
     mem.record(150.0, {Counter::Wheel, 7, 0}, 2);
@@ -56,6 +79,16 @@ int selftest()
     mem.sensorHeard("AA:BB:CC:DD:EE:FF", "SPD-BLE1", -60);
     mem.sensorHeard("AA:BB:CC:DD:EE:FF", "SPD-BLE1", std::nullopt, "speed");
     check(true, "sensors recorded");
+    std::string file = std::string(std::getenv("PURR_TMP") ? std::getenv("PURR_TMP") : "tmp") + "/logger-selftest.db";
+    std::remove(file.c_str());
+    {
+        Store disk(file);
+        disk.record(6000, {Counter::Crank, 10, 0}, 10, 2);
+        disk.record(6010, {Counter::Crank, 11, 0}, 1, 0);
+    }
+    purr::Stats st = purr::loadStats(file, purr::cal::localDay(6000));
+    check(st.total == 13 && st.estimated == 2, "totals include estimated turns, shown apart");
+    std::remove(file.c_str());
     std::cout << (failures ? "FAILED\n" : "all passed\n");
     return failures ? 1 : 0;
 }

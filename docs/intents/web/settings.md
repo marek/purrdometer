@@ -34,6 +34,7 @@ sees half a file.
 | `[display] rotate180` | On or off |
 | `[display] active_refresh_s`, `idle_refresh_s`, `full_refresh_every` | Whole numbers in 1–60, 10–3600 and 1–200 |
 | `[sensor] address` | A sensor's address, or empty for automatic |
+| `[sensor] wake_turns` | A whole number 0–10: turns added when the sensor wakes, for the turns it misses ([../data/accounting.md](../data/accounting.md#turns-the-sensor-misses)) |
 
 Every value is checked the same way the config file's are
 ([../data/wheels.md](../data/wheels.md)); a rejected save says why and writes
@@ -47,6 +48,7 @@ nothing.
 | Choice | Automatic (the first heard) or one of the list; saved as `[sensor] address` |
 | Scan | Asks the logger for a 20-second scan by touching `/var/lib/purrdometer/scan-request`; the list fills in as it runs. Governed by the same access rule as saving |
 | Mounting | A picture and a few lines for the chosen sensor's kind: cadence or speed |
+| Missed turns | `wake_turns`, with what it is for |
 | Test | "Turn the wheel now": a live count of rotations and rpm since the test began, read from `/api/stats` every second, with no saving involved |
 
 **Never from the web:** `[web]` (`bind`, `port`, `settings_access`,
@@ -77,7 +79,7 @@ listens, could lock itself out or open itself up.
 |---|---|
 | `purrdometer-web` | On the next request: it reads both files on every request |
 | `purrdometer-display` | Before its next redraw (5 s while running, 60 s idle): it checks both files' modification times, and redraws in full on a change |
-| `purrdometer-logger` | Within a second for `[sensor] address`: it checks both files' modification times; nothing else it does depends on a setting |
+| `purrdometer-logger` | Within a second for `[sensor] address` and `wake_turns`: it checks both files' modification times; nothing else it does depends on a setting |
 
 ## Proven by
 

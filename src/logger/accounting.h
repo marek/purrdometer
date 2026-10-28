@@ -16,7 +16,7 @@ constexpr double MAX_REVS_PER_SECOND = 5.0;
 struct Accounting {
     uint32_t delta = 0;  // revolutions to add
     double rpm = -1;     // < 0: unknown
-    bool reset = false;  // counter discontinuity detected
+    bool reset = false;  // counter discontinuity: a restart (delta = its count) or garbage (delta 0)
 };
 
 // last: the previous sample (if any) and the wall-clock time it was received.

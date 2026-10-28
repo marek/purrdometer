@@ -28,7 +28,8 @@ using DayCount = std::pair<cal::Day, long long>;
 
 struct Stats {
     std::map<cal::Day, long long> daily; // only days with rotations
-    long long total = 0, today = 0;
+    long long total = 0, today = 0; // measured plus estimated
+    long long estimated = 0;        // of total: turns the sensor missed (docs/intents/data/accounting.md)
     std::optional<cal::Day> firstDay;
     Live live;
 

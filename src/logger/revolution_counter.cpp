@@ -19,23 +19,46 @@ RevolutionCounter::RevolutionCounter(Store& store) : store_(store)
     log("restored ", counterName(c), " counter at ", last_->revs);
 }
 
+void RevolutionCounter::setKind(Counter c)
+{
+    std::scoped_lock lock(mutex_);
+    counter_ = c;
+}
+
+void RevolutionCounter::setWakeTurns(int wakeTurns)
+{
+    std::scoped_lock lock(mutex_);
+    missed_.configure(wakeTurns);
+}
+
+void RevolutionCounter::connected(bool firstSinceStart)
+{
+    std::scoped_lock lock(mutex_);
+    missed_.connected(firstSinceStart);
+}
+
 void RevolutionCounter::forget()
 {
+    std::scoped_lock lock(mutex_);
     last_.reset();
     store_.forgetCounter();
 }
 
 void RevolutionCounter::onMeasurement(const std::vector<uint8_t>& bytes)
 {
+    std::scoped_lock lock(mutex_);
     auto cur = parseMeasurement(bytes, counter_);
     if (!cur)
         return;
     double now = nowSeconds();
     Accounting a = account(last_, lastWall_, *cur, now);
+    bool restarted = last_ && last_->counter == cur->counter && cur->revs < last_->revs;
+    int estimated = missed_.estimate(a.delta, restarted);
     if (a.reset)
-        log("counter discontinuity (", last_->revs, " -> ", cur->revs, "), resyncing");
+        log("counter discontinuity (", last_->revs, " -> ", cur->revs, "): ",
+            a.delta ? "the sensor restarted, its " + std::to_string(a.delta) + " added" : "nothing added");
     try {
-        store_.record(now, *cur, a.delta);
+        store_.record(now, *cur, a.delta, estimated);
         if (a.delta > 0)
             store_.setState("last_motion", std::to_string(now));
         if (a.rpm >= 0)
@@ -44,7 +67,8 @@ void RevolutionCounter::onMeasurement(const std::vector<uint8_t>& bytes)
         log("storage error: ", e.what());
     }
     if (a.delta > 0)
-        log("revs=", cur->revs, " +", a.delta, " rpm=", int(a.rpm + 0.5));
+        log("revs=", cur->revs, " +", a.delta, " rpm=", int(a.rpm + 0.5),
+            estimated ? " (+" + std::to_string(estimated) + " the sensor missed)" : "");
     last_ = *cur;
     lastWall_ = now;
 }

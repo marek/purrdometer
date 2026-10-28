@@ -14,7 +14,11 @@ Accounting account(std::optional<Sample> last, double lastWall, Sample cur, doub
     const double elapsed = std::max(0.0, nowWall - lastWall);
     const double plausible = std::ceil(elapsed * MAX_REVS_PER_SECOND) + 2;
     if (dRevs > plausible) {
-        a.reset = true; // sensor rebooted / battery swap / garbage
+        // A restarted sensor counts from 0: what it shows now was turned since
+        // the restart. A forward jump leaves cur.revs above the limit too, and adds nothing.
+        a.reset = true;
+        if (cur.revs <= plausible)
+            a.delta = cur.revs;
         return a;
     }
     a.delta = dRevs;

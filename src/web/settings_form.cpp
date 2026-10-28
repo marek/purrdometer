@@ -28,6 +28,8 @@ Editable editableFromForm(const httplib::Request& req, Editable e)
     number("active_refresh_s", e.activeRefreshS);
     number("idle_refresh_s", e.idleRefreshS);
     e.sensor = optional("sensor");
+    if (req.has_param("wake_turns")) // kept as it was when a form leaves it out
+        number("wake_turns", e.wakeTurns);
     return e;
 }
 

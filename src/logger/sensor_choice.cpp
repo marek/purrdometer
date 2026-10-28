@@ -19,24 +19,16 @@ std::optional<std::string> loadMac(const std::string& file)
 
 } // namespace
 
-SensorChoice::SensorChoice(const Paths& paths)
-    : paths_(paths), settings_({paths.config, paths.overrides}), choice_(sensorChoice(paths.config, paths.overrides))
-{
-}
+std::optional<std::string> SensorChoice::target() const { return choice_ ? choice_ : loadMac(sensorFile_); }
 
-std::optional<std::string> SensorChoice::target() const { return choice_ ? choice_ : loadMac(paths_.sensorFile); }
-
-bool SensorChoice::changed()
+bool SensorChoice::choose(const std::optional<std::string>& choice)
 {
-    if (!settings_.changed())
-        return false;
-    auto choice = sensorChoice(paths_.config, paths_.overrides);
     if (choice == choice_)
         return false;
     choice_ = choice;
     return true;
 }
 
-void SensorChoice::remember(const std::string& address) { std::ofstream(paths_.sensorFile) << address << '\n'; }
+void SensorChoice::remember(const std::string& address) { std::ofstream(sensorFile_) << address << '\n'; }
 
 } // namespace purr::logger

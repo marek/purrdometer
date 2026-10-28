@@ -16,7 +16,10 @@ Store::Store(const std::string& path)
     sqlite3_busy_timeout(db_, 5000);
     exec("PRAGMA journal_mode=WAL");
     exec("PRAGMA synchronous=NORMAL");
-    exec("CREATE TABLE IF NOT EXISTS minutes (minute INTEGER PRIMARY KEY, revs INTEGER NOT NULL)");
+    exec("CREATE TABLE IF NOT EXISTS minutes (minute INTEGER PRIMARY KEY, revs INTEGER NOT NULL, "
+         "estimated INTEGER NOT NULL DEFAULT 0)");
+    if (!hasColumn("minutes", "estimated")) // a version 2 database
+        exec("ALTER TABLE minutes ADD COLUMN estimated INTEGER NOT NULL DEFAULT 0");
     exec("CREATE TABLE IF NOT EXISTS samples (ts REAL NOT NULL, revs INTEGER NOT NULL, "
          "event_time INTEGER NOT NULL, delta INTEGER NOT NULL)");
     exec("CREATE INDEX IF NOT EXISTS samples_ts ON samples(ts)");
@@ -24,8 +27,8 @@ Store::Store(const std::string& path)
          "rssi INTEGER, last_seen REAL)");
     exec("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)");
     exec("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)");
-    exec("INSERT OR IGNORE INTO meta VALUES ('schema_version', '2')");
-    exec("UPDATE meta SET value = '2' WHERE key = 'schema_version'");
+    exec("INSERT OR IGNORE INTO meta VALUES ('schema_version', '3')");
+    exec("UPDATE meta SET value = '3' WHERE key = 'schema_version'");
     exec("INSERT OR IGNORE INTO meta VALUES ('created', strftime('%s','now'))");
     exec("DELETE FROM samples WHERE ts < strftime('%s','now') - 30*86400");
 }
@@ -40,6 +43,15 @@ void Store::exec(const std::string& sql)
         sqlite3_free(err);
         throw std::runtime_error("sqlite: " + msg + " in: " + sql);
     }
+}
+
+bool Store::hasColumn(const char* table, const char* column)
+{
+    Statement s(db_, (std::string("SELECT name FROM pragma_table_info('") + table + "')").c_str());
+    while (s.step() == SQLITE_ROW)
+        if (s.column(0) == column)
+            return true;
+    return false;
 }
 
 void Store::setState(const std::string& key, const std::string& value)
@@ -76,14 +88,16 @@ void Store::sensorHeard(const std::string& address, const std::string& name, std
     s.text(1, address).text(2, name).optText(3, kind).optInt(4, rssi).dbl(5, nowSeconds()).step();
 }
 
-void Store::record(double ts, Sample cur, uint32_t delta)
+void Store::record(double ts, Sample cur, uint32_t delta, int estimated)
 {
     std::scoped_lock lock(mutex_);
     exec("BEGIN");
+    if (delta > 0 || estimated > 0) {
+        Statement s(db_, "INSERT INTO minutes VALUES (?1, ?2, ?3) ON CONFLICT(minute) DO UPDATE SET "
+                         "revs = revs + excluded.revs, estimated = estimated + excluded.estimated");
+        s.i64(1, int64_t(ts) / 60).i64(2, delta).i64(3, estimated).step();
+    }
     if (delta > 0) {
-        Statement s(db_, "INSERT INTO minutes VALUES (?1, ?2) "
-                         "ON CONFLICT(minute) DO UPDATE SET revs = revs + excluded.revs");
-        s.i64(1, int64_t(ts) / 60).i64(2, delta).step();
         Statement r(db_, "INSERT INTO samples VALUES (?1, ?2, ?3, ?4)");
         r.dbl(1, ts).i64(2, cur.revs).i64(3, cur.eventTime).i64(4, delta).step();
     }

@@ -4,6 +4,7 @@
 // half second, so a change is seen even while the sensor sleeps.
 #pragma once
 
+#include "common/config.h"
 #include "common/file_watch.h"
 #include "logger/adapter.h"
 #include "logger/options.h"
@@ -12,6 +13,7 @@
 #include "logger/sensor_link.h"
 #include "logger/store.h"
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 
@@ -37,13 +39,17 @@ private:
     bool deviceExists();
     void startNotify();
     void publishConnected(bool c);
+    void applySettings(const Editable& e);
 
     Store& store_;
     std::unique_ptr<sdbus::IConnection> bus_;
     Adapter adapter_;
     RevolutionCounter counter_;
+    Paths paths_;
+    FileWatch settings_;
     SensorChoice choice_;
     FileWatch scanRequest_;
+    std::atomic<bool> firstConnection_{true};
     std::unique_ptr<SensorLink> link_;
     bool found_ = false; // heard advertising: worth a Connect
 };

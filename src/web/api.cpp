@@ -26,7 +26,7 @@ std::string renderApi(const Site& site)
     json j = {
         {"wheel", {{"name", w.name}, {"diameter_m", w.diameterM}, {"circumference_m", w.circumferenceM()},
                    {"estimated", w.estimated}}},
-        {"total", {{"rotations", st.total}, {"km", w.km(st.total)}}},
+        {"total", {{"rotations", st.total}, {"km", w.km(st.total)}, {"estimated_rotations", st.estimated}}},
         {"today", {{"rotations", st.today}, {"km", w.km(st.today)}}},
         {"first_day", st.firstDay ? json(cal::iso(*st.firstDay)) : json(nullptr)},
         {"live", {{"running", st.live.running(double(now))}, {"rpm", st.live.rpm}, {"kmh", w.kmh(st.live.rpm)},
