@@ -145,7 +145,7 @@
       <defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--muted)"/></marker></defs>
     </svg>
     <div>
-      <p>On the axle or hub, as it would sit on a bicycle hub, or on the wheel's face like a cadence sensor. One turn of the wheel is one revolution.</p>
+      <p>On the axle or hub, as it would sit on a bicycle hub, or on the wheel's face like a cadence sensor (not yet tried). One turn of the wheel is one revolution.</p>
       <p class="hint">Keep the battery door reachable: fix the sensor's holder, not the sensor.</p>
     </div>
 <% } else { -%>
@@ -157,8 +157,8 @@
       <defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--muted)"/></marker></defs>
     </svg>
     <div>
-      <p>On the back face of the wheel, close to the axle (about a crank's length, 15 cm), its face flat against the wheel. It counts turns of its own orientation, like a clock hand going round, so one turn of the wheel is one revolution.</p>
-      <p class="hint">Keep the battery door reachable: fix the sensor's holder, not the sensor. Shaking or spinning it in the hand wakes it but does not count.</p>
+      <p>On the back face of the wheel, its face flat against the wheel; on the outside of a Ferris G5 it counts every turn. It counts turns of its own orientation, like a clock hand going round, so one turn of the wheel is one revolution.</p>
+      <p class="hint">Keep the battery door reachable: fix the sensor's holder, not the sensor. Rocking it does not wake it: it takes about three full turns in a row.</p>
     </div>
 <% } -%>
   </div>

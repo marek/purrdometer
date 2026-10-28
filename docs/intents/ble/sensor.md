@@ -62,6 +62,6 @@ or not.
 |---|---|
 | Cadence sensor plane | Face parallel to the wheel, as on a crank arm: it counts turns of its own orientation, like a clock hand going round |
 | Speed sensor | On the axle or hub, as on a bicycle hub, or on the wheel's face like a cadence sensor; it counts turns the same way |
-| Radius | Close to the axle, about crank length (~15 cm). Near the rim, running speed puts several g of centripetal acceleration on the sensor, which may confuse its rotation detection |
+| Radius | Anywhere on the wheel's face: on the outside of a Ferris G5 (2026-10-27) it counted 12 of 12 turns once awake. Speed sensors are supported by the standard and untested |
 | Battery | The battery door must stay reachable; glue a holder to the wheel and seat the sensor in it, not the sensor's back to the wheel |
 | Side | The back side of the wheel, away from the cat |

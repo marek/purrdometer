@@ -29,8 +29,9 @@ reinstall the package.
 ## A sensor that is connected but silent
 
 The sensor sends data only while it detects rotation: full turns in the plane
-of its face, the way a crank turns it, like a clock hand going round. Shaking
-it or spinning it on a table wakes it but does not count.
+of its face, the way a crank turns it, like a clock hand going round. Rocking
+it does not even wake it; it takes about three full turns in a row
+([the sensor](sensor.md#waking-up)).
 
 If it is turning and still silent:
 
@@ -39,7 +40,7 @@ If it is turning and still silent:
   once paired with the Pi sends nothing to the Pi's own address; reinstall the
   package if the line is missing;
 - check the battery level on NOW;
-- check it is mounted face-parallel to the wheel and near the axle ([the sensor](sensor.md#mounting)).
+- check it is mounted face-parallel to the wheel ([the sensor](sensor.md#mounting)).
 
 ## The Bluetooth trace
 
