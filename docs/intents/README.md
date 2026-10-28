@@ -45,6 +45,7 @@ listing them.
 | [workspace/source-layout.md](workspace/source-layout.md) | How the C++ source is divided: a folder per program, a class per job, a header per class, `main.cpp` only wiring |
 | [workspace/packaging.md](workspace/packaging.md) | The `.deb`: contents, version, maintainer scripts, the system settings it owns, install/remove/purge guarantees |
 | [ble/link.md](ble/link.md) | Keeping the BLE link up: supervision timeout, WiFi coexistence, unbonded use, reconnecting, discovery |
+| [ble/raw-log.md](ble/raw-log.md) | The debugging log of every measurement and connection event, off by default, a day or two kept |
 | [ble/sensor.md](ble/sensor.md) | The CSC sensor as the logger uses it: services, the measurement, battery, which sensor is ours, mounting |
 | [data/storage.md](data/storage.md) | The SQLite database: path, tables, who writes and who reads, retention, durability |
 | [data/accounting.md](data/accounting.md) | Sensor readings → rotations: deltas, wrap-around, resets, rotations while the logger was down, rpm |

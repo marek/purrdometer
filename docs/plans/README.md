@@ -31,3 +31,5 @@ the rest can be worked.
 | [2026-10-28-0859-install-paths-and-warnings.md](2026-10-28-0859-install-paths-and-warnings.md) | Every path from one header built from the Makefile's install directories; a build with no warnings, kept that way by -Werror | 6 | 0 |
 | [2026-10-28-0933-history-that-stays-fast.md](2026-10-28-0933-history-that-stays-fast.md) | Reads of the history that cost the same after five years as today, measured on the Pi | 6 | 0 |
 | [2026-10-28-1039-dashboard-on-port-80.md](2026-10-28-1039-dashboard-on-port-80.md) | The dashboard on port 80 in one server with the setup page; 8080 redirects | 6 | 0 |
+| [2026-10-28-1205-raw-sensor-log.md](2026-10-28-1205-raw-sensor-log.md) | Every measurement and connection event as the sensor sent it, a file a day for a day or two, off by default, downloadable from the settings page | 1 | 5 |
+| [2026-10-28-1635-codebase-hardening-review.md](2026-10-28-1635-codebase-hardening-review.md) | The codebase review captured as data-integrity, privilege-boundary, concurrency, packaging, test-structure and documentation hardening work | 0 | 12 |
