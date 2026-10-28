@@ -1,0 +1,22 @@
+[Unit]
+Description=purrdometer setup mode: the WiFi hotspot and joining a network (docs/intents/network/setup.md)
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+# Root, and only this: nmcli for WiFi, chpasswd and usermod for the login,
+# systemctl for ssh. It takes requests from files the unprivileged services
+# write in /var/lib/purrdometer and publishes its state in /run/purrdometer-setup.
+ExecStart=/usr/bin/purrdometer-setup
+RuntimeDirectory=purrdometer-setup
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+Restart=always
+RestartSec=5
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

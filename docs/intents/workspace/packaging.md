@@ -18,9 +18,9 @@ rotation history survives both.
 | Name, architecture | `purrdometer`, the build machine's architecture (`arm64` on the Pi); built natively on the Pi |
 | Build | `packaging/build-deb.sh`: runs `make test` first and refuses to package a failing tree; artifacts in `dist/`. Run in `packaging/build-in-container.sh` on a developer machine, in the release workflow, or on the Pi. The build dependencies are listed once, in `packaging/build-deps` |
 | Version | The git tag, said by `tools/version.sh`: a commit tagged `v<version>` is that version, the highest of several tags on one commit; a commit past the last tag is `<version>.r<commits since>.g<short hash>`, which dpkg orders after that tag and before the next; a commit with no tag behind it is `0.0.0.r<commits>.g<short hash>`. A tag dpkg cannot take fails the build |
-| Contents | `/usr/bin/purrdometer-logger`, `/usr/bin/purrdometer-web`, `/usr/bin/purrdometer-display`, the wheel catalogue in `/usr/share/purrdometer/wheels.conf`, `/usr/sbin/purrdometer-btdiag`, both systemd units in `/lib/systemd/system`, `/etc/purrdometer/purrdometer.conf`, `/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf`, the README in `/usr/share/doc/purrdometer` |
-| Conffiles | `/etc/purrdometer/purrdometer.conf` and the NetworkManager drop-in: local edits survive upgrades |
-| Depends | the three binaries' shared libraries computed by `dpkg-shlibdeps`, plus BlueZ, `adduser` and the display's font; `network-manager` and `sqlite3` are Recommends |
+| Contents | `/usr/bin/purrdometer-logger`, `/usr/bin/purrdometer-web`, `/usr/bin/purrdometer-display`, `/usr/bin/purrdometer-setup`, the wheel catalogue in `/usr/share/purrdometer/wheels.conf`, `/usr/sbin/purrdometer-btdiag`, the four systemd units in `/lib/systemd/system`, `/etc/purrdometer/purrdometer.conf`, `/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf`, `/etc/NetworkManager/dnsmasq-shared.d/purrdometer.conf`, the README in `/usr/share/doc/purrdometer` |
+| Conffiles | `/etc/purrdometer/purrdometer.conf` and the two NetworkManager drop-ins: local edits survive upgrades |
+| Depends | the four binaries' shared libraries computed by `dpkg-shlibdeps`, plus BlueZ, `adduser`, the display's font and `network-manager` (setup mode runs through it); `sqlite3` is a Recommends |
 | Prompts | none: the maintainer scripts are non-interactive |
 
 ## Services
@@ -29,10 +29,12 @@ rotation history survives both.
 |---|---|---|
 | `purrdometer-logger.service` | `purrdometer-logger` against `/var/lib/purrdometer` | `purrdometer`, with `bluetooth` |
 | `purrdometer-display.service` | `purrdometer-display` | `purrdometer`, with `spi`, `i2c`, `gpio` |
-| `purrdometer-web.service` | `purrdometer-web` | `purrdometer`, read-only system, no devices, memory and CPU capped ([../web/dashboard.md](../web/dashboard.md)) |
+| `purrdometer-web.service` | `purrdometer-web`, on 8080 and on port 80 for setup mode's portal | `purrdometer`, read-only system, no devices, memory and CPU capped ([../web/dashboard.md](../web/dashboard.md)); `CAP_NET_BIND_SERVICE` only, for port 80 |
+| `purrdometer-setup.service` | `purrdometer-setup`: the hotspot, joining WiFi, the login ([../network/setup.md](../network/setup.md#the-helper)) | root: the one privileged part; it acts only on requests the others leave in `/var/lib/purrdometer` |
 
-All restart on failure, start at boot, and share `/var/lib/purrdometer` as
-their state directory.
+All restart on failure and start at boot. The first three share
+`/var/lib/purrdometer` as their state directory; the helper publishes its
+state in `/run/purrdometer-setup`.
 
 ## System settings the package owns
 

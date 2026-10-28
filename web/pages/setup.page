@@ -1,0 +1,78 @@
+<%# Setup mode's page, on the hotspot (docs/intents/network/setup.md#the-setup-page). -%>
+<%@ include "web/setup_view.h" %>
+<%@ include "web/settings_form.h" %>
+<%@ include "head.page.h" %>
+<%@ include "foot.page.h" %>
+<%@ param const purr::web::SetupView& v %>
+<% using namespace purr; using namespace purr::web; using setup::Phase; -%>
+<% const bool joining = v.submitted || v.state.phase == Phase::Joining; -%>
+<% head(out, "Set up · purrdometer", "WiFi setup", joining ? 3 : 0); -%>
+<% if (!v.allowed) { -%>
+<section>
+  <strong>Setup is not running.</strong> It starts on a new Pi with no WiFi, or by holding the screen while
+  the Pi starts. The settings are at the gear on the dashboard.
+</section>
+<% } else if (joining) { -%>
+<section class="ok">
+  <strong>Joining <%= v.state.network.empty() ? "your WiFi" : v.state.network %>…</strong>
+  <p>The Pi leaves this hotspot to join it, so this page stops answering. Put your phone back on your
+  WiFi: the screen shows the Pi's new address, and the dashboard is there on port 8080.</p>
+  <p class="hint">If the password was wrong, the hotspot comes back within a minute with the reason on the screen; join it again.</p>
+</section>
+<% } else { -%>
+<% for (auto& p : v.problems) { -%>
+<section class="error">Not sent: <%= p %></section>
+<% } -%>
+<% if (!v.state.message.empty()) { -%>
+<section class="error"><%= v.state.message %></section>
+<% } -%>
+<form method="post" action="/setup">
+<input type="hidden" name="token" value="<%= v.token %>">
+
+<section>
+  <h2>WiFi <span>· the network the Pi joins</span></h2>
+<% bool first = true; for (auto& n : v.networks) { -%>
+  <label class="choice"><input type="radio" name="network" value="<%= n.ssid %>"<%= first ? " checked" : "" %>> <%= n.ssid %>
+    <span class="muted">· <%= n.signal %>%<%= n.security.empty() ? " · open" : "" %></span></label>
+<% first = false; } -%>
+  <label class="choice"><input type="radio" name="network" value="other"<%= v.networks.empty() ? " checked" : "" %>> Another network, by name</label>
+  <input name="ssid" type="text" maxlength="32" autocapitalize="none" autocorrect="off" placeholder="its name">
+  <label for="wifi">Its password</label>
+  <input id="wifi" name="wifi_password" type="password" autocomplete="off" minlength="8" maxlength="63">
+  <p class="hint">Leave it empty for an open network.</p>
+</section>
+
+<section>
+  <h2>Login <span>· <%= v.login.empty() ? "the Pi's account" : v.login %></span></h2>
+  <label for="pw">New password <span class="muted">(optional)</span></label>
+  <input id="pw" name="login_password" type="password" autocomplete="new-password" minlength="8">
+  <label for="pw2">Again</label>
+  <input id="pw2" name="login_confirm" type="password" autocomplete="new-password" minlength="8">
+  <label><input type="checkbox" name="ssh" value="1"> SSH on</label>
+  <label for="key">SSH public key <span class="muted">(optional, one line)</span></label>
+  <input id="key" name="ssh_key" type="text" autocapitalize="none" autocorrect="off" placeholder="ssh-ed25519 AAAA…">
+</section>
+
+<section>
+  <h2>Wheel <span>· <%= v.wheel.name %></span></h2>
+  <label for="preset">Wheel</label>
+  <select id="preset" name="preset">
+<% for (auto& w : v.presets->wheels) { auto s = showLength(w.diameterM, v.units); -%>
+    <option value="<%= w.key %>"<%= v.wheel.preset == w.key ? " selected" : "" %>><%= w.name %> · <%= s.substr(0, s.find(" (")) %></option>
+<% } -%>
+    <option value=""<%= v.wheel.preset ? "" : " selected" %>>Another wheel: give its diameter</option>
+  </select>
+  <label for="diameter">Measured diameter <span class="muted">(optional)</span></label>
+  <div class="row">
+    <input id="diameter" name="diameter" type="number" step="0.1" min="0" inputmode="decimal"
+           value="<%= diameterForForm(v.wheel.diameterM, v.units) %>" placeholder="the wheel's">
+    <span><%= v.units %></span>
+  </div>
+</section>
+
+<div class="row">
+  <button type="submit">Join and finish</button>
+</div>
+</form>
+<% } -%>
+<% foot(out, v.state.deadline ? "Setup closes by itself if nothing is sent, and the Pi goes back to the WiFi it had." : "Setup stays open until the Pi is on WiFi."); -%>

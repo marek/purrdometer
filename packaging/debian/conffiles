@@ -1,2 +1,3 @@
 /etc/purrdometer/purrdometer.conf
 /etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf
+/etc/NetworkManager/dnsmasq-shared.d/purrdometer.conf

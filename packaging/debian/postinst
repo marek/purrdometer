@@ -58,10 +58,12 @@ if [ "$1" = configure ]; then
         if command -v iwconfig >/dev/null 2>&1; then iwconfig wlan0 power off 2>/dev/null || true
         elif [ -x /usr/sbin/iwconfig ]; then /usr/sbin/iwconfig wlan0 power off 2>/dev/null || true; fi
     fi
-    systemctl enable purrdometer-logger.service purrdometer-display.service purrdometer-web.service >/dev/null 2>&1
+    systemctl enable purrdometer-logger.service purrdometer-display.service purrdometer-web.service \
+        purrdometer-setup.service >/dev/null 2>&1
     if ! in_chroot; then
         systemctl daemon-reload
-        systemctl restart purrdometer-logger.service purrdometer-display.service purrdometer-web.service || true
+        systemctl restart purrdometer-logger.service purrdometer-display.service purrdometer-web.service \
+            purrdometer-setup.service || true
     fi
 fi
 exit 0

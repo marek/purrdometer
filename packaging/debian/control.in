@@ -3,15 +3,16 @@ Version: @VERSION@
 Architecture: @ARCH@
 Maintainer: Marek Kudlacz <marek@kudlacz.com>
 Installed-Size: @SIZE@
-Depends: @SHLIBS@, bluez (>= 5.50), adduser, fonts-dejavu-core
-Recommends: network-manager, sqlite3
+Depends: @SHLIBS@, bluez (>= 5.50), adduser, fonts-dejavu-core, network-manager
+Recommends: sqlite3
 Section: misc
 Priority: optional
 Description: cat-wheel odometer: BLE cadence sensor logger, e-paper display, web dashboard
  purrdometer-logger reads a Bluetooth LE Cycling Speed & Cadence sensor and
  stores wheel rotations in SQLite. purrdometer-display shows rotations,
  distance and history on a Waveshare 2.13" Touch e-Paper HAT, and
- purrdometer-web serves the same as a web dashboard.
+ purrdometer-web serves the same as a web dashboard. purrdometer-setup puts
+ a new Pi on WiFi from a phone, through a hotspot shown on the screen.
  .
  The package also configures BlueZ for a 6 s LE supervision timeout and turns
  off WiFi power-save, which keeps the BLE link stable on a Pi Zero 2 W.

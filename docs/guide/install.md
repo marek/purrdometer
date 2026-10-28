@@ -42,6 +42,17 @@ Either way the package:
 The screen shows NOW with zeros until the wheel turns. Spin the wheel to wake
 the sensor; the logger finds it by itself ([the sensor](sensor.md)).
 
+## WiFi from a phone
+
+A Pi with no WiFi set up starts **setup mode** by itself, and a running one
+does when you hold the touch bar for three seconds, or hold the screen while
+it starts. The screen shows a hotspot name, its password and a QR code. Join
+it from your phone and the setup page opens (or go to `http://10.42.0.1`):
+choose your WiFi and its password, and optionally a login password, SSH and
+the wheel. The Pi joins your WiFi and the screen shows its new address. If
+nothing is sent within ten minutes, the hotspot closes and the Pi goes back
+to the WiFi it had.
+
 ## Build it yourself
 
 On an arm64 machine with podman or docker (an Apple-silicon Mac, for example):

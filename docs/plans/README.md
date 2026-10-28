@@ -23,7 +23,7 @@ the rest can be worked.
 | [2026-10-27-1420-cpp26-trixie-and-web-settings.md](2026-10-27-1420-cpp26-trixie-and-web-settings.md) | C++26 on Raspberry Pi OS trixie, builds in a trixie container, and the dashboard's gear page for the wheel and screen settings | 9 | 1 |
 | [2026-10-27-1615-display-in-cpp.md](2026-10-27-1615-display-in-cpp.md) | The e-paper display ported to C++, proven pixel by pixel against the Python version, and Python removed | 9 | 0 |
 | [2026-10-27-1650-releases-and-image.md](2026-10-27-1650-releases-and-image.md) | Releases from a `v*` tag on GitHub's arm64 runners: the `.deb` and a shrunk, compressed Raspberry Pi OS Lite image with it installed | 6 | 0 |
-| [2026-10-27-1705-setup-hotspot.md](2026-10-27-1705-setup-hotspot.md) | A setup hotspot with a per-device password shown on the e-paper, and a setup page for WiFi, the login password and the wheel | 0 | 11 |
+| [2026-10-27-1705-setup-hotspot.md](2026-10-27-1705-setup-hotspot.md) | A setup hotspot with a per-device password shown on the e-paper, and a setup page for WiFi, the login password and the wheel | 6 | 6 |
 | [2026-10-27-1800-sensor-silent-to-the-pi.md](2026-10-27-1800-sensor-silent-to-the-pi.md) | A connected, subscribed sensor silent to the Pi alone: it remembered a pairing with the Pi's address; the Pi now connects with a random address | 8 | 0 |
 | [2026-10-27-1920-choosing-the-sensor.md](2026-10-27-1920-choosing-the-sensor.md) | The settings page lists the sensors heard, cadence or speed, chooses one, shows how to mount it and tests it live; speed sensors supported | 7 | 1 |
 | [2026-10-27-2000-one-job-per-class.md](2026-10-27-2000-one-job-per-class.md) | The source divided into a folder per program and a class per job, behaviour unchanged | 9 | 0 |

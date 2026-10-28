@@ -4,6 +4,8 @@
 #pragma once
 
 #include "common/config.h"
+#include "common/setup_form.h"
+#include "common/setup_state.h"
 #include "common/wheel.h"
 
 #include <optional>
@@ -18,6 +20,7 @@ struct Paths {
     std::string profiles = PROFILES_PATH;
     std::string wheels = WHEELS_PATH;
     std::string scanRequest = SCAN_REQUEST_PATH; // touched to ask the logger for a scan
+    std::string setupState = setup::STATE_PATH, setupNetworks = setup::NETWORKS_PATH, setupApply = setup::APPLY_PATH;
 };
 
 struct Site {
@@ -25,6 +28,8 @@ struct Site {
     WheelPresets presets;
     std::optional<std::string> bind;
     std::optional<int> port;
+    int portalPort = 80;                          // setup mode's captive portal; 0: none
+    std::string hotspotPrefix = setup::HOTSPOT_PREFIX; // who may use /setup
 
     Config config() const { return loadConfig(presets, paths.config, paths.overrides, paths.profiles); }
 };

@@ -10,7 +10,12 @@
 #include "web/dashboard_routes.h"
 #include "web/html.h"
 #include "web/save_guard.h"
+#include "web/portal.h"
 #include "web/server.h"
+#include "common/setup_form.h"
+#include "common/setup_state.h"
+
+#include <sys/stat.h>
 #include "web/site.h"
 
 #include <httplib.h>
@@ -20,6 +25,7 @@
 #include <cmath>
 #include <cstdio>
 #include <ctime>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -285,6 +291,72 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
               offWheel->get_header_value("Location").find("wheel_error") != std::string::npos,
           "settings_access = off refuses saving, wheels included");
     std::remove(prof.c_str());
+
+    // Setup mode's page and portal, with this machine standing in for the hotspot.
+    srv.paths.setupState = tmpDir + "/selftest-setup-state";
+    srv.paths.setupNetworks = tmpDir + "/selftest-setup-networks";
+    srv.paths.setupApply = tmpDir + "/selftest-setup-apply";
+    for (auto& f : {srv.paths.setupState, srv.paths.setupNetworks, srv.paths.setupApply})
+        std::remove(f.c_str());
+    std::ofstream(conf) << "[wheel]\nmodel = ferris-g5\n";
+    httplib::Server portal;
+    addPortalRoutes(srv, portal);
+    int portalPort = portal.bind_to_any_port("127.0.0.1");
+    std::thread portalThread([&] { portal.listen_after_bind(); });
+    httplib::Client phone("127.0.0.1", portalPort);
+    httplib::Result probe;
+    for (int i = 0; i < 50 && !(probe = phone.Get("/setup")); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    auto notRunning = phone.Get("/setup");
+    check(notRunning && notRunning->status == 403 && notRunning->body.find("Setup is not running") != std::string::npos,
+          "the setup page is closed while setup is not running");
+    srv.hotspotPrefix = "127.0.0.";
+    setup::writeState({.phase = setup::Phase::Hotspot, .ssid = "purrdometer-c12e", .password = "abcdefghjk",
+                       .deadline = std::time(nullptr) + 600},
+                      srv.paths.setupState);
+    setup::writeNetworks({{"Periphery", 73, "WPA2"}, {"Cafe", 40, ""}}, srv.paths.setupNetworks);
+    auto setupPage = phone.Get("/setup");
+    std::string setupCookie = setupPage ? setupPage->get_header_value("Set-Cookie") : "";
+    std::string setupToken = setupCookie.starts_with(prefix) ? setupCookie.substr(prefix.size(), 32) : "";
+    check(setupPage && setupPage->status == 200 && setupPage->body.find("Periphery") != std::string::npos &&
+              setupPage->body.find("Cafe") != std::string::npos && setupCookie.find("Path=/setup") != std::string::npos,
+          "on the hotspot: the networks scanned, and a form token for /setup");
+    httplib::Headers setupHeaders = {{"Cookie", prefix + setupToken}};
+    auto setupForm = [&](const std::string& confirm) {
+        return httplib::Params{{"token", setupToken},           {"network", "Periphery"},
+                               {"wifi_password", "pass:word#1"}, {"login_password", "longenough"},
+                               {"login_confirm", confirm},       {"ssh", "1"},
+                               {"ssh_key", "ssh-ed25519 AAAA me@laptop"}, {"preset", "ferris-g5"},
+                               {"diameter", ""}};
+    };
+    struct stat file{};
+    auto noSetupToken = phone.Post("/setup", setupForm("longenough"));
+    check(noSetupToken && noSetupToken->status == 403 && stat(srv.paths.setupApply.c_str(), &file) != 0,
+          "a setup form without its token is refused");
+    auto mismatch = phone.Post("/setup", setupHeaders, setupForm("different"));
+    check(mismatch && mismatch->status == 400 && mismatch->body.find("differ") != std::string::npos &&
+              stat(srv.paths.setupApply.c_str(), &file) != 0,
+          "mismatched login passwords are refused, and nothing reaches the helper");
+    auto sent = phone.Post("/setup", setupHeaders, setupForm("longenough"));
+    auto applied = setup::readApply(srv.paths.setupApply);
+    stat(srv.paths.setupApply.c_str(), &file);
+    check(sent && sent->status == 303 && applied && applied->ssid == "Periphery" &&
+              applied->wifiPassword == "pass:word#1" && applied->ssh && (file.st_mode & 0777) == 0600,
+          "a complete form goes to the helper, readable by its owner only");
+
+    probe = phone.Get("/generate_204");
+    check(probe && probe->status == 302 && probe->get_header_value("Location") == "http://10.42.0.1/setup",
+          "a phone's connectivity check lands on the setup page");
+    setup::writeState({}, srv.paths.setupState);
+    srv.port = port;
+    auto home = phone.Get("/");
+    check(home && home->status == 302 && home->get_header_value("Location") == std::format("http://127.0.0.1:{}/", port),
+          "outside setup, port 80 sends to the dashboard");
+    portal.stop();
+    portalThread.join();
+    for (auto& f : {srv.paths.setupState, srv.paths.setupNetworks, srv.paths.setupApply})
+        std::remove(f.c_str());
+
     http.stop();
     listener.join();
     std::remove(db.c_str());

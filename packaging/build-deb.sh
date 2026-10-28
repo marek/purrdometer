@@ -27,7 +27,7 @@ trap 'rm -rf "$STAGE"' EXIT
 chmod 755 "$STAGE"
 
 echo "== stage"
-for bin in purrdometer-logger purrdometer-web purrdometer-display; do
+for bin in purrdometer-logger purrdometer-web purrdometer-display purrdometer-setup; do
     install -D -m 755 "bin/$bin" "$STAGE/usr/bin/$bin"
     strip --strip-unneeded "$STAGE/usr/bin/$bin"
 done
@@ -37,9 +37,12 @@ install -D -m 755 system/btdiag.sh "$STAGE/usr/sbin/purrdometer-btdiag"
 install -D -m 644 packaging/systemd/purrdometer-logger.service "$STAGE/lib/systemd/system/purrdometer-logger.service"
 install -D -m 644 packaging/systemd/purrdometer-display.service "$STAGE/lib/systemd/system/purrdometer-display.service"
 install -D -m 644 packaging/systemd/purrdometer-web.service "$STAGE/lib/systemd/system/purrdometer-web.service"
+install -D -m 644 packaging/systemd/purrdometer-setup.service "$STAGE/lib/systemd/system/purrdometer-setup.service"
 install -D -m 644 packaging/etc/purrdometer.conf "$STAGE/etc/purrdometer/purrdometer.conf"
 install -D -m 644 system/NetworkManager-wifi-powersave.conf \
     "$STAGE/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf"
+install -D -m 644 system/NetworkManager-dnsmasq-shared.conf \
+    "$STAGE/etc/NetworkManager/dnsmasq-shared.d/purrdometer.conf"
 install -D -m 644 README.md "$STAGE/usr/share/doc/$PKG/README.md"
 { printf "Upstream-Name: purrdometer\nLicense: Apache-2.0\n\n"; cat LICENSE.md; } > "$STAGE/usr/share/doc/$PKG/copyright"
 chmod 644 "$STAGE/usr/share/doc/$PKG/copyright"

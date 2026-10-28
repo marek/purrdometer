@@ -1,10 +1,12 @@
 #include "web/server.h"
 
 #include "web/dashboard_routes.h"
+#include "web/portal.h"
 #include "web/settings_routes.h"
 #include "web/wheel_routes.h"
 
 #include <print>
+#include <thread>
 
 namespace purr::web {
 
@@ -41,7 +43,20 @@ int serve(const Site& site)
     addRoutes(site, server);
     std::println("serving on http://{}:{}/ from {} ({}); settings: {}", bind, port, site.paths.db,
                  describe(cfg.wheel, cfg.editable.units), accessName(cfg.access));
+    httplib::Server portal;
+    std::jthread portalThread;
+    if (site.portalPort > 0) {
+        portal.new_task_queue = [] { return new httplib::ThreadPool(1); };
+        addPortalRoutes(site, portal);
+        if (portal.bind_to_port(bind, site.portalPort)) {
+            portalThread = std::jthread([&portal] { portal.listen_after_bind(); });
+            std::println("setup portal on port {}", site.portalPort);
+        } else {
+            std::println(stderr, "no setup portal: cannot listen on port {}", site.portalPort);
+        }
+    }
     if (!server.listen(bind, port)) {
+        portal.stop();
         std::println(stderr, "cannot listen on {}:{}", bind, port);
         return 1;
     }
