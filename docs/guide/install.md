@@ -4,6 +4,8 @@ The hardware, installing the package, and upgrading or removing it.
 
 ## Hardware
 
+<p align="center"><img width="300" src="../media/device.jpg" alt="The finished screen: a Pi Zero 2 W in the Waveshare case, showing NOW"></p>
+
 | Part | Notes |
 |---|---|
 | Raspberry Pi Zero 2 W | Raspberry Pi OS trixie (64-bit) or later, on WiFi |

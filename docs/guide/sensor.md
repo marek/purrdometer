@@ -8,6 +8,8 @@ are all on the dashboard's settings page (the gear), under **Sensor**.
 
 ## Mounting
 
+<img align="right" width="300" src="../media/sensor-mounted.jpg" alt="A Garmin cadence sensor mounted in the back of a Ferris G5, face flat against the wheel">
+
 - **Cadence sensor:** fix it to the **back side** of the wheel, away from the
   cat, with the face of the sensor parallel to the wheel, the way it sits on
   a bike's crank arm. It counts turns of its own orientation, like a clock
