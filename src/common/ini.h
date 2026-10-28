@@ -1,4 +1,4 @@
-// Minimal INI reader for purrdometer.conf and wheels.ini: [section], key = value,
+// Minimal INI reader for purrdometer.conf and wheels.conf: [section], key = value,
 // whole-line and inline comments starting with # or ;.
 #pragma once
 

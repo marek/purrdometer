@@ -61,7 +61,7 @@ footer { color: var(--muted); font-size: 13px; margin-top: 16px; }
 .tag { font-size: 12px; color: var(--c3); border: 1px solid var(--c3); border-radius: 10px; padding: 1px 8px; margin-left: 6px; }
 .mount { display: flex; gap: 16px; align-items: center; margin: 4px 0 12px; }
 .mount svg { width: 120px; height: 120px; flex: none; }
-section h2 + .mount, .row + h2 { margin-top: 14px; }
+section h2 + .mount, .row + h2, .hint + h2, details + h2 { margin-top: 14px; }
 .mount p { margin: 0 0 6px; }
 </style>
 </head>

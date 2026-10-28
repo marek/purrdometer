@@ -19,7 +19,7 @@ void drawNow(StatsCtx& x)
     c.text(4, 1, "ROTATIONS", label);
     std::string big = thousands(x.s.total);
     c.text(3, 11, big, x.fit(big, SPLIT - 8, 32));
-    std::string total = km(x.wheel.km(x.s.total)) + " km";
+    std::string total = km(x.s.totalKm) + " km";
     c.text(4, 50, total, x.fit(total, SPLIT - 8, 22));
     if (x.s.firstDay)
         c.text(4, 77, "since " + cal::longDate(*x.s.firstDay), small);
@@ -27,7 +27,7 @@ void drawNow(StatsCtx& x)
     c.line(SPLIT, 3, SPLIT, CONTENT_H - 3);
     const int col = SPLIT + 6;
     c.text(col, 1, "TODAY", label);
-    std::string today = km(x.wheel.km(x.s.today)) + " km";
+    std::string today = km(x.s.todayKm) + " km";
     c.text(col, 12, today, x.fit(today, W - col - 3, 18));
     c.text(col, 34, thousands(x.s.today) + " rotations", small);
 

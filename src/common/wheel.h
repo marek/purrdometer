@@ -1,4 +1,4 @@
-// Wheels: presets from wheels.ini, measured diameters, distance per rotation.
+// Wheels: presets from wheels.conf, measured diameters, distance per rotation.
 // docs/intents/data/wheels.md owns the rules.
 #pragma once
 
@@ -12,12 +12,12 @@ namespace purr {
 constexpr double INCH = 0.0254;
 
 struct Wheel {
-    std::string key;           // preset key, empty for a custom wheel
-    std::string name;
+    std::string key{};         // preset key, empty for a custom wheel
+    std::string name{};
     double diameterM = 0;      // running (inner) diameter
-    std::optional<double> outerM, trackM;
+    std::optional<double> outerM{}, trackM{};
     bool estimated = false;    // no published inner diameter
-    std::string source;
+    std::string source{};
 
     double circumferenceM() const;
     double km(long long rotations) const { return rotations * circumferenceM() / 1000; }

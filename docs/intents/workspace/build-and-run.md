@@ -18,8 +18,17 @@ proven on a venue below before it is called done.
 | Toolchain | GCC 14 from trixie, `-std=c++26`; trixie is the oldest release that has it |
 | Logger | `build-essential`, `pkg-config`, `libsdbus-c++-dev`, `libsqlite3-dev` | (sdbus-c++ 2) |
 | Web dashboard | `libcpp-httplib-dev`, `nlohmann-json3-dev`, `libsqlite3-dev` |
-| Display | `libfreetype-dev`, `libharfbuzz-dev`, `libgpiod-dev`, `libpng-dev`, `fonts-dejavu-core` |
+| Display | `libfreetype-dev`, `libharfbuzz-dev`, `libgpiod-dev`, `libpng-dev`, `libqrencode-dev`, `fonts-dejavu-core` |
 | Package | `dpkg-dev` |
+
+## Build rules
+
+| Subject | Rule |
+|---|---|
+| Warnings | `-Wall -Wextra -Werror`: a warning fails the build. Library headers are included as system headers (`-isystem`), so only our code is held to it |
+| Install directories | Named as autotools names them and set on the `make` line: `PREFIX` (`/usr`), `SYSCONFDIR` (`/etc`), `LOCALSTATEDIR` (`/var`), `RUNSTATEDIR` (`/run`), `DATADIR` (`$(PREFIX)/share`), `FONTDIR` (the system's DejaVu, `/usr/share/fonts/truetype/dejavu`, whatever `PREFIX` is). The defaults are the Debian layout, and `packaging/build-deb.sh` names them explicitly |
+| Paths in the code | Only in `src/common/paths.h`, built from those directories: the config, the catalogue, the state directory's files, setup mode's run files, the fonts. No other file of `src/` or `web/pages/` spells out a path |
+| Clock | `build-in-container.sh` steps a podman VM's clock before building, so make never sees sources from the future |
 
 ## Make targets
 

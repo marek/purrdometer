@@ -17,14 +17,14 @@ read. No process depends on another running.
 |---|---|
 | Path | `/var/lib/purrdometer/purrdometer.db`, owned by the `purrdometer` user |
 | Mode | WAL, `synchronous=NORMAL`: a reader never blocks the writer; a power cut loses at most the last moments, never the file |
-| Schema owner | The logger creates and migrates it; `meta.schema_version` names the version (3); version 3 adds `minutes.estimated`, by `ALTER TABLE` on an older database |
+| Schema owner | The logger creates and migrates it; `meta.schema_version` names the version (4). Version 3 added `minutes.estimated`; version 4 keys `minutes` by minute and wheel profile, and puts every older row under profile 1, in one transaction |
 | Readers | The display and the web dashboard open it read-only; a missing file or schema reads as no history |
 
 ## Tables
 
 | Table | Holds | Kept |
 |---|---|---|
-| `minutes(minute PK, revs, estimated)` | Rotations per wall-clock minute, measured (`revs`) and estimated turns the sensor missed (`estimated`, [accounting.md](accounting.md#turns-the-sensor-misses)); `minute` = unix time ÷ 60, UTC | Forever: this is the history |
+| `minutes(minute, wheel, revs, estimated)`, keyed by `minute` and `wheel` | Rotations per wall-clock minute and wheel profile ([wheels.md](wheels.md#profiles)): measured (`revs`) and estimated turns the sensor missed (`estimated`, [accounting.md](accounting.md#turns-the-sensor-misses)); `minute` = unix time ÷ 60, UTC. A minute in which the profile changed has a row for each | Forever: this is the history |
 | `samples(ts, revs, event_time, delta)` | Every measurement that added rotations, as received | 30 days, pruned at logger start |
 | `state(key PK, value)` | Live status and the counter needed to resume ([accounting.md](accounting.md)) | Overwritten in place |
 | `sensors(address PK, name, kind, rssi, last_seen)` | Every CSC sensor heard; `kind` is `cadence`, `speed` or empty until the sensor's features are read | Overwritten in place |
@@ -44,8 +44,10 @@ read. No process depends on another running.
 
 ## Rules
 
-- Only rotations are stored. Distance, speed and every chart are derived at
-  read time ([wheels.md](wheels.md)).
+- Only rotations are stored, each under its wheel profile. Distance, speed
+  and every chart are derived at read time ([wheels.md](wheels.md)).
+- The logger stores a rotation under the profile current when it arrives,
+  read from `profiles.conf`; it follows a change within a second.
 - Days are local days, computed when reading; a timezone change regroups
   history without rewriting it.
 - A measurement and the state it updates are written in one transaction.

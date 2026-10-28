@@ -13,6 +13,7 @@ std::optional<Options> parseOptions(int argc, char** argv)
                              : a == "--sensor-file"  ? &o.paths.sensorFile
                              : a == "--config"       ? &o.paths.config
                              : a == "--overrides"    ? &o.paths.overrides
+                             : a == "--profiles"     ? &o.paths.profiles
                              : a == "--scan-request" ? &o.paths.scanRequest
                                                      : nullptr;
         if (a == "--selftest") {
@@ -21,7 +22,7 @@ std::optional<Options> parseOptions(int argc, char** argv)
             *field = argv[++i];
         } else {
             std::println(stderr, "usage: purrdometer-logger [--db PATH] [--sensor-file PATH] [--config PATH]\n"
-                                 "       [--overrides PATH] [--scan-request PATH] [--selftest]");
+                                 "       [--overrides PATH] [--profiles PATH] [--scan-request PATH] [--selftest]");
             return std::nullopt;
         }
     }

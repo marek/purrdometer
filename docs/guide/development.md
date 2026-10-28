@@ -14,7 +14,7 @@ skills and roles beside it.
 |---|---|
 | `src/` | A folder per program, each with `main.cpp` and `selftest.cpp`: `logger/` (measurement parsing, accounting, the SQLite store, the BlueZ adapter and sensor link, the monitor loop); `display/` (pins, panel and touch drivers, canvas and fonts, `screens/` one file each, taps and holds, the refresh policy, the boot window, the app loop); `web/` (the server, a module per group of routes, the save guard); `setup/` (commands, NetworkManager, the login account, setup mode's state machine). `common/` holds what several use (config, wheels, the database reader, formats, calendar days, file watching, setup mode's shared files); `tools/pagec.cpp` is the page compiler. [workspace/source-layout.md](../intents/workspace/source-layout.md) has the rules |
 | `web/pages/` | The dashboard's pages as `.page`, compiled to C++ ([templates](../intents/web/pages.md)) |
-| `data/wheels.ini` | The wheel presets, read by both the screen and the dashboard |
+| `data/wheels.conf` | The wheel presets, read by both the screen and the dashboard |
 | `packaging/` | `build-deb.sh`, the Debian control file and maintainer scripts, the systemd units, the default config |
 | `system/` | Files the package installs into the system (`btdiag.sh`, the NetworkManager drop-in) |
 | `tools/` | `check-plans.sh` and `plan-items.sh` (the plans), `hooks/` |
@@ -43,7 +43,7 @@ way, but slowly:
 
 ```sh
 make            # the logger, the template compiler, the dashboard (no -j: the Zero swaps)
-make test       # the three programs' self-tests
+make test       # the four programs' self-tests
 make preview    # every screen as a PNG in preview/, from made-up history
 make serve      # the dashboard on :8081 over made-up history
 make deb        # the package, in dist/ (runs make test first)
@@ -51,6 +51,16 @@ make deb        # the package, in dist/ (runs make test first)
 
 A first build on a Pi Zero takes over 10 minutes and swaps hard, nearly all of
 it compiling `httplib.h`; after that, editing a page rebuilds only that page.
+
+A warning fails the build. The programs find their files under the usual
+install directories, set on the `make` line; the defaults are where the
+package installs:
+
+```sh
+make PREFIX=/usr SYSCONFDIR=/etc LOCALSTATEDIR=/var RUNSTATEDIR=/run
+```
+
+Every path the code uses is in `src/common/paths.h`, built from these.
 
 ## Writing a page
 

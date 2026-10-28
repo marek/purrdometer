@@ -1,7 +1,7 @@
 // purrdometer-display: the logger's history on a Waveshare 2.13" Touch
 // e-Paper HAT, with a touch bar of four tabs, and setup mode's screens.
 //
-// Usage: purrdometer-display [--config PATH] [--overrides PATH] [--wheels PATH] [--db PATH]
+// Usage: purrdometer-display [--config PATH] [--overrides PATH] [--profiles PATH] [--wheels PATH] [--db PATH]
 //                            [--demo-db PATH] [--preview DIR] [--now UNIX_TIME]
 //                            [--list-wheels] [--check-config] [--selftest] [-v]
 
@@ -30,13 +30,16 @@ std::atomic<bool> stopping{false};
 
 int configCommands(const Options& o, const WheelPresets& presets)
 {
-    Config cfg = loadConfig(presets, o.config, o.overrides);
+    Config cfg = loadConfig(presets, o.config, o.overrides, o.profiles);
     if (o.listWheels)
         for (auto& w : presets.wheels)
             std::println("{:12} {}", w.key, describe(w, cfg.editable.units));
     if (!o.checkConfig)
         return 0;
-    std::println("{}: {}", o.config, describe(cfg.wheel, cfg.editable.units));
+    const Profile* inUse = cfg.profiles.find(cfg.profiles.current);
+    std::println("{}: wheel in use: {} ({}), {}", o.config, inUse ? inUse->name : "?",
+                 cfg.profilesSeeded ? "from [wheel], no profiles.conf yet" : o.profiles,
+                 describe(cfg.wheel, cfg.editable.units));
     for (auto& e : cfg.errors)
         std::println(stderr, "error: {}", e);
     return cfg.errors.empty() ? 0 : 1;
@@ -46,7 +49,7 @@ int runScreen(const Options& o, const WheelPresets& presets)
 {
     std::signal(SIGTERM, [](int) { stopping = true; });
     std::signal(SIGINT, [](int) { stopping = true; });
-    LiveConfig config(presets, o.config, o.overrides);
+    LiveConfig config(presets, o.config, o.overrides, o.profiles);
     Fonts fonts;
     Gpio gpio;
     EPaper epaper(gpio);
@@ -83,7 +86,7 @@ int main(int argc, char** argv)
                 return 0; // just the database, for make serve
         }
         if (o.preview)
-            return writePreviews(loadConfig(presets, o.config, o.overrides), o.db, *o.preview,
+            return writePreviews(loadConfig(presets, o.config, o.overrides, o.profiles), o.db, *o.preview,
                                  o.now.value_or(std::time(nullptr)));
         return runScreen(o, presets);
     } catch (const std::exception& e) {

@@ -17,7 +17,7 @@ Monitor::Monitor(Store& store, const Paths& paths)
                    if (link_ && path == link_->path())
                        link_->lost();
                }),
-      counter_(store), paths_(paths), settings_({paths.config, paths.overrides}),
+      counter_(store), paths_(paths), settings_({paths.config, paths.overrides, paths.profiles}),
       choice_(paths.sensorFile, sensorChoice(paths.config, paths.overrides)), scanRequest_({paths.scanRequest})
 {
     applySettings(loadEditable(paths.config, paths.overrides));
@@ -27,6 +27,7 @@ Monitor::Monitor(Store& store, const Paths& paths)
 void Monitor::applySettings(const Editable& e)
 {
     counter_.setWakeTurns(e.wakeTurns);
+    counter_.setWheel(currentProfile(paths_.profiles));
 }
 
 Monitor::~Monitor() { bus_->leaveEventLoop(); }

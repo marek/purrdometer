@@ -1,7 +1,8 @@
-<%# Settings: the wheel and the screen, saved to the web UI's overrides file. -%>
+<%# Settings: the wheels, saved to profiles.conf; the sensor and the screen, saved to the web UI's overrides file. -%>
 <%@ include "web/settings_view.h" %>
 <%@ include "head.page.h" %>
 <%@ include "foot.page.h" %>
+<%@ include "web/settings_form.h" %>
 <%@ param const purr::SettingsView& v %>
 <% using namespace purr; using namespace purr::web; -%>
 <% const auto& e = v.values; const bool inches = e.units == "in"; -%>
@@ -10,7 +11,7 @@
 <section class="ok">Saved. The dashboard uses it now; the screen within a minute.</section>
 <% } -%>
 <% if (v.wasReset) { -%>
-<section class="ok">Back to the defaults in <code>/etc/purrdometer/purrdometer.conf</code>.</section>
+<section class="ok">Back to the defaults in <code><%= CONFIG_PATH %></code>.</section>
 <% } -%>
 <% for (auto& p : v.problems) { -%>
 <section class="error">Not saved: <%= p %></section>
@@ -24,34 +25,92 @@
 </section>
 <% } -%>
 
+<%
+  const char* unitName = inches ? "in" : "cm";
+  auto size = [&](const Wheel& w) { auto s = showLength(w.diameterM, e.units); return s.substr(0, s.find(" (")); };
+  auto guard = [&] { -%>
+  <input type="hidden" name="token" value="<%= v.token %>">
+<%   if (v.access == SettingsAccess::Pin && v.canSave) { -%>
+  <label>PIN</label>
+  <input name="pin" type="password" autocomplete="current-password" required>
+<%   } -%>
+<% };
+  // The fields of a wheel: its name, its model, a measured diameter.
+  auto wheelFields = [&](const Profile* p, const std::string& idPrefix) { -%>
+  <label for="<%= idPrefix %>name">Name</label>
+  <input id="<%= idPrefix %>name" name="name" type="text" maxlength="40" required value="<%= p ? p->name : "" %>" placeholder="Living room wheel">
+  <label for="<%= idPrefix %>preset">Wheel</label>
+  <select id="<%= idPrefix %>preset" name="preset">
+<%   for (auto& w : v.presets->wheels) { -%>
+    <option value="<%= w.key %>"<%= p && p->preset == w.key ? " selected" : "" %>><%= w.name %> · <%= size(w) %><%= w.estimated ? " (estimated)" : "" %></option>
+<%   } -%>
+    <option value=""<%= p && !p->preset ? " selected" : "" %>>Another wheel: give its diameter</option>
+  </select>
+  <label for="<%= idPrefix %>diameter">Measured diameter <span class="muted">(optional)</span></label>
+  <div class="row">
+    <input id="<%= idPrefix %>diameter" name="diameter" type="number" step="0.1" min="0" inputmode="decimal"
+           value="<%= p ? diameterForForm(p->diameterM, e.units) : "" %>" placeholder="the wheel's">
+    <span><%= unitName %></span>
+  </div>
+  <p class="hint">Inside of the running track, edge to edge. Leave empty to use the wheel's published size.</p>
+<% }; -%>
+
+<section id="wheels">
+  <h2>Wheels <span>· distance is each wheel's rotations × its running circumference</span></h2>
+<% if (!v.wheelSaved.empty()) { -%>
+  <p class="ok">Saved: <%= v.wheelSaved %>.</p>
+<% } -%>
+<% if (!v.wheelError.empty()) { -%>
+  <p class="error">Not saved: <%= v.wheelError %>.</p>
+<% } -%>
+<% for (auto& r : v.wheels) { const std::string id = std::to_string(r.profile.id); -%>
+  <div class="choice">
+    <strong><%= r.profile.name %></strong><%== r.inUse ? " <span class=\"tag\">in use</span>" : "" %>
+    <span class="muted">· <% if (r.wheel.name != r.profile.name) { %><%= r.wheel.name %>, <% } %><%= size(r.wheel) %> · <%= km(r.km) %> km</span>
+  </div>
+  <details>
+    <summary>Edit <%= r.profile.name %></summary>
+    <form method="post" action="/settings/wheels">
+<%   guard(); -%>
+      <input type="hidden" name="do" value="edit"><input type="hidden" name="id" value="<%= id %>">
+<%   wheelFields(&r.profile, "w" + id); -%>
+      <p class="hint">Corrects this wheel: the distance of its own rotations changes, and no other.</p>
+      <button type="submit"<%= v.canSave ? "" : " disabled" %>>Save <%= r.profile.name %></button>
+    </form>
+  </details>
+<%   if (!r.inUse) { -%>
+  <form method="post" action="/settings/wheels" class="row">
+<%     guard(); -%>
+    <input type="hidden" name="id" value="<%= id %>">
+    <button type="submit" class="secondary" name="do" value="use"<%= v.canSave ? "" : " disabled" %>>Use this wheel</button>
+<%     if (!r.hasRotations) { -%>
+    <button type="submit" class="secondary" name="do" value="delete"<%= v.canSave ? "" : " disabled" %>>Delete</button>
+<%     } -%>
+  </form>
+<%   } -%>
+<% } -%>
+  <details>
+    <summary>New wheel</summary>
+    <form method="post" action="/settings/wheels">
+<% guard(); -%>
+      <input type="hidden" name="do" value="new">
+<% wheelFields(nullptr, "new"); -%>
+      <p class="hint">Switch when you move the sensor to the new wheel: rotations from then on are the new wheel's, and the old one keeps its distance.</p>
+      <button type="submit"<%= v.canSave ? "" : " disabled" %>>Add and use</button>
+    </form>
+  </details>
+</section>
+
 <form method="post" action="/settings">
 <input type="hidden" name="token" value="<%= v.token %>">
 
 <section>
-  <h2>Wheel <span>· distance is rotations × the running circumference</span></h2>
-
-  <label>Units</label>
+  <h2>Units</h2>
   <div class="toggle" role="radiogroup" aria-label="Units">
     <label><input type="radio" name="units" value="cm"<%= inches ? "" : " checked" %>><span>cm</span></label>
     <label><input type="radio" name="units" value="in"<%= inches ? " checked" : "" %>><span>inches</span></label>
   </div>
-  <p class="hint">How sizes are shown, and the unit of a measured diameter. Distances are always km.</p>
-
-  <label for="model">Wheel</label>
-  <select id="model" name="model">
-<% for (auto& w : v.presets->wheels) { -%>
-    <option value="<%= w.key %>" data-m="<%= fixed(w.diameterM, 4) %>"<%= w.key == e.model ? " selected" : "" %>><%= w.name %> · <%= showLength(w.diameterM, e.units).substr(0, showLength(w.diameterM, e.units).find(" (")) %><%= w.estimated ? " (estimated)" : "" %></option>
-<% } -%>
-  </select>
-
-  <label for="diameter">Measured diameter <span class="muted">(optional)</span></label>
-  <div class="row">
-    <input id="diameter" name="diameter" type="number" step="0.1" min="0" inputmode="decimal"
-           value="<%= e.diameter ? *e.diameter : "" %>" placeholder="preset">
-    <span id="unit"><%= inches ? "in" : "cm" %></span>
-  </div>
-  <p class="hint">Inside of the running track, edge to edge. Leave empty to use the wheel's published size.</p>
-  <p class="hint">Now: <%= describe(v.current, e.units) %></p>
+  <p class="hint">How wheel sizes are shown, and the unit of a measured diameter. Distances are always km; a diameter is kept in cm whatever is shown.</p>
 </section>
 
 <section id="sensor">
@@ -144,21 +203,6 @@
 </form>
 
 <script>
-// Switching units converts a typed diameter and relabels the wheel sizes.
-(function () {
-  var diameter = document.getElementById('diameter'), unit = document.getElementById('unit');
-  document.querySelectorAll('input[name=units]').forEach(function (r) {
-    r.addEventListener('change', function () {
-      var toIn = r.value === 'in', v = parseFloat(diameter.value);
-      if (!isNaN(v)) diameter.value = (toIn ? v / 2.54 : v * 2.54).toFixed(1);
-      unit.textContent = toIn ? 'in' : 'cm';
-      document.querySelectorAll('#model option').forEach(function (o) {
-        var m = parseFloat(o.dataset.m), size = toIn ? (m / 0.0254).toFixed(1) + ' in' : (m * 100).toFixed(1) + ' cm';
-        o.textContent = o.textContent.replace(/ · [0-9.]+ (cm|in)/, ' · ' + size);
-      });
-    });
-  });
-})();
 // The live test: rotations and rpm since Start, from the same JSON as the dashboard.
 (function () {
   var button = document.getElementById('test'), out = document.getElementById('testout'), timer = null, base = 0, until = 0;
@@ -167,12 +211,12 @@
   button.addEventListener('click', function () {
     if (timer) return stop();
     stats().then(function (s) {
-      base = s.total.rotations; until = Date.now() + 120000; button.textContent = 'Stop';
+      base = s.total.rotations - s.total.estimated_rotations; until = Date.now() + 120000; button.textContent = 'Stop';
       out.textContent = s.live.connected ? 'turn the wheel now' : 'the sensor is not connected: turn it to wake it';
       timer = setInterval(function () {
         if (Date.now() > until) return stop();
         stats().then(function (s) {
-          var n = s.total.rotations - base;
+          var n = s.total.rotations - s.total.estimated_rotations - base;
           out.textContent = !s.live.connected ? 'the sensor is not connected: turn it to wake it'
             : n + (n === 1 ? ' rotation' : ' rotations') + ' · ' + s.live.rpm + ' rpm';
         });
@@ -181,5 +225,5 @@
   });
 })();
 </script>
-<% foot(out, "Saved to <code>/var/lib/purrdometer/settings.ini</code>, over <code>/etc/purrdometer/purrdometer.conf</code>. "
+<% foot(out, std::string("Saved to <code>") + OVERRIDES_PATH + "</code>, over <code>" + CONFIG_PATH + "</code>. "
         "Who may save is <code>[web] settings_access</code> in that file: <strong>" + std::string(accessName(v.access)) + "</strong>."); -%>

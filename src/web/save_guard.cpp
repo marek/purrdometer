@@ -20,8 +20,8 @@ bool maySave(const Config& cfg, const std::string& addr, std::string& whyNot)
         whyNot = "Saving is allowed from the home network only, and " + addr + " is not on it.";
         return false;
     case SettingsAccess::Off:
-        whyNot = "Saving from the web is off ([web] settings_access = off): edit "
-                 "/etc/purrdometer/purrdometer.conf on the Pi.";
+        whyNot = std::string("Saving from the web is off ([web] settings_access = off): edit ") + CONFIG_PATH +
+                 " on the Pi.";
         return false;
     }
     return false;

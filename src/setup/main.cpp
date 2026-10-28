@@ -5,6 +5,7 @@
 //
 // Usage: purrdometer-setup [--hotspot-minutes N] [--selftest]
 
+#include "common/paths.h"
 #include "setup/network_manager.h"
 #include "setup/setup_mode.h"
 
@@ -39,7 +40,7 @@ int main(int argc, char** argv)
         return 1;
     }
     try {
-        mkdir("/run/purrdometer-setup", 0755);
+        mkdir(purr::SETUP_RUN_DIR, 0755);
         purr::setup::NetworkManager wifi;
         purr::setup::SetupMode setup(wifi, minutes);
         setup.begin();

@@ -1,6 +1,7 @@
 // The logger's SQLite database (docs/intents/data/storage.md):
 //
-//   minutes(minute PK, revs, estimated)  permanent history; minute = unix_time / 60;
+//   minutes(minute, wheel, revs, estimated)  permanent history, keyed by minute and
+//                                   wheel profile; minute = unix_time / 60;
 //                                   estimated: turns the sensor missed
 //   samples(ts, revs, event_time, delta)  raw readings, pruned after 30 days
 //   sensors(address PK, name, kind, rssi, last_seen)  every CSC sensor heard
@@ -37,8 +38,8 @@ public:
                      std::optional<std::string> kind = std::nullopt);
 
     // A sample, the revolutions it added and the missed turns estimated with
-    // it, and the counter it leaves.
-    void record(double ts, Sample cur, uint32_t delta, int estimated = 0);
+    // it, stored under wheel profile `wheel`, and the counter it leaves.
+    void record(double ts, Sample cur, uint32_t delta, int estimated = 0, int wheel = 1);
 
     // A new sensor: nothing is counted across the switch.
     void forgetCounter();
@@ -46,6 +47,7 @@ public:
 private:
     void exec(const std::string& sql);
     bool hasColumn(const char* table, const char* column);
+    void migrate();
 
     sqlite3* db_ = nullptr;
     std::recursive_mutex mutex_; // called from the D-Bus thread and the main thread

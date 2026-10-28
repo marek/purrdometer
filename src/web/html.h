@@ -38,4 +38,7 @@ inline void raw(std::string& out, std::string_view s) { out += s; }
 
 std::string escape(std::string_view s);
 
+// For a URL's query: everything but letters, digits and -_.~ as %XX.
+std::string urlEncode(std::string_view s);
+
 } // namespace purr::web

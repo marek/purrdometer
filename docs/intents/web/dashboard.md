@@ -18,7 +18,7 @@ of memory, a page in tens of milliseconds. Read-only over the database
 | HTTP | cpp-httplib (Debian `libcpp-httplib`) | A small compiled library from apt; a fixed pool of 2 worker threads |
 | Pages | `.page` files compiled to C++ at build time ([pages.md](pages.md)) | No runtime template engine; a page can call any C++ function |
 | JSON | nlohmann-json (header-only, from apt) | |
-| Wheels | `data/wheels.ini`, the same file the display reads ([../data/wheels.md](../data/wheels.md)) | One owner for every preset |
+| Wheels | The catalogue `data/wheels.conf` and the profiles, read through the same code as the display ([../data/wheels.md](../data/wheels.md)) | One owner for every wheel |
 
 ## Routes
 
@@ -50,6 +50,6 @@ the browser's light or dark preference.
 |---|---|
 | Config | `[web] bind` (default `0.0.0.0`) and `port` (default 8080) in `purrdometer.conf`; `[wheel]` as for the display; both files are read on every request, so a saved setting applies at once |
 | Access | No login: it is for the home network. `bind = 127.0.0.1` keeps it local. Saving settings has its own rule ([settings.md](settings.md)) |
-| Service | `purrdometer-web.service` as `purrdometer`, with a read-only system except its state directory (where `settings.ini` lives), no devices, `MemoryMax=64M`, `CPUQuota=50%` |
+| Service | `purrdometer-web.service` as `purrdometer`, with a read-only system except its state directory (where `settings.conf` and `profiles.conf` live), no devices, `MemoryMax=64M`, `CPUQuota=50%` |
 | Errors | A failing request logs the path and the exception and answers 500; the process keeps serving |
 | Proven by | `purrdometer-web --selftest`: lengths and units, the presets, calendar arithmetic, escaping, number formats, a real database through the whole page and the JSON |

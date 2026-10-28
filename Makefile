@@ -1,6 +1,17 @@
 CXX ?= g++
 CXXFLAGS ?= -O2 -g
-CXXFLAGS += -std=c++26 -Wall -Wextra -Isrc -I$(BUILD)/gen
+CXXFLAGS += -std=c++26 -Wall -Wextra -Werror -Isrc -I$(BUILD)/gen
+
+# Install directories, as autotools names them; the defaults are the Debian layout the package uses.
+PREFIX ?= /usr
+SYSCONFDIR ?= /etc
+LOCALSTATEDIR ?= /var
+RUNSTATEDIR ?= /run
+DATADIR ?= $(PREFIX)/share
+# The system's fonts-dejavu-core, not ours: not under PREFIX.
+FONTDIR ?= /usr/share/fonts/truetype/dejavu
+CXXFLAGS += -DPURR_SYSCONFDIR='"$(SYSCONFDIR)"' -DPURR_LOCALSTATEDIR='"$(LOCALSTATEDIR)"' \
+            -DPURR_RUNSTATEDIR='"$(RUNSTATEDIR)"' -DPURR_DATADIR='"$(DATADIR)"' -DPURR_FONTDIR='"$(FONTDIR)"'
 
 BUILD = build
 PURR_TMP ?= $(CURDIR)/tmp
@@ -52,7 +63,7 @@ $(BUILD)/gen/%.o: $(BUILD)/gen/%.cpp
 # Every web object may include a generated header, so they wait for all of them.
 $(BUILD)/%.o: %.cpp | $(GEN_HDRS)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -MMD -MP $(shell pkg-config --cflags $(LOGGER_PKGS) $(WEB_PKGS) $(DISPLAY_PKGS)) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -MMD -MP $(subst -I,-isystem ,$(shell pkg-config --cflags $(LOGGER_PKGS) $(WEB_PKGS) $(DISPLAY_PKGS))) -c -o $@ $<
 
 $(WEB): $(WEB_OBJS)
 	@mkdir -p $(@D)
@@ -70,25 +81,25 @@ test: all
 	@mkdir -p $(PURR_TMP)
 	tools/check-includes.sh
 	$(LOGGER) --selftest
-	$(WEB) --selftest --wheels data/wheels.ini
-	$(DISPLAY) --selftest --wheels data/wheels.ini
+	$(WEB) --selftest --wheels data/wheels.conf
+	$(DISPLAY) --selftest --wheels data/wheels.conf
 	$(SETUP) --selftest
 
 # Render every e-paper screen from a fake-history database into preview/ (no hardware needed).
 preview: $(DISPLAY)
 	@mkdir -p $(PURR_TMP)
-	$(DISPLAY) --wheels data/wheels.ini --config /dev/null --demo-db $(PURR_TMP)/demo.db --preview preview
+	$(DISPLAY) --wheels data/wheels.conf --config /dev/null --demo-db $(PURR_TMP)/demo.db --preview preview
 
 # The same renders, for the README.
 media: $(DISPLAY)
 	@mkdir -p $(PURR_TMP)
-	$(DISPLAY) --wheels data/wheels.ini --config /dev/null --demo-db $(PURR_TMP)/demo.db --preview docs/media
+	$(DISPLAY) --wheels data/wheels.conf --config /dev/null --demo-db $(PURR_TMP)/demo.db --preview docs/media
 
 # The web dashboard on :8081 over the same fake history, from the checkout.
 serve: all
 	@mkdir -p $(PURR_TMP)
-	$(DISPLAY) --wheels data/wheels.ini --demo-db $(PURR_TMP)/demo.db
-	$(WEB) --db $(PURR_TMP)/demo.db --wheels data/wheels.ini --config /dev/null --port 8081
+	$(DISPLAY) --wheels data/wheels.conf --demo-db $(PURR_TMP)/demo.db
+	$(WEB) --db $(PURR_TMP)/demo.db --wheels data/wheels.conf --config /dev/null --port 8081
 
 deb:
 	packaging/build-deb.sh

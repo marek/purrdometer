@@ -69,7 +69,8 @@ int selftest(const Options& o)
     std::string db = tmp + "/display-selftest.db";
     makeDemoDb(db);
     std::time_t now = std::time(nullptr);
-    Stats demo = loadStats(db, cal::localDay(now)), none = loadStats(tmp + "/missing.db", cal::localDay(now));
+    const std::map<int, double> g5Only{{FIRST_PROFILE, g5.circumferenceM()}};
+    Stats demo = loadStats(db, cal::localDay(now), g5Only), none = loadStats(tmp + "/missing.db", cal::localDay(now), g5Only);
     check(demo.total > 0 && demo.live.running(double(now)), "demo history is running now");
     for (int v = 0; v < int(VIEWS.size()); ++v) {
         Canvas full = render(fonts, demo, g5, v, now), blank = render(fonts, none, g5, v, now);

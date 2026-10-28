@@ -9,11 +9,12 @@
 namespace purr::logger {
 
 struct Paths {
-    std::string db = "/var/lib/purrdometer/purrdometer.db";
-    std::string sensorFile = "/var/lib/purrdometer/sensor";   // the first sensor heard, kept
+    std::string db = DB_PATH;
+    std::string sensorFile = SENSOR_PATH; // the first sensor heard, kept
     std::string config = CONFIG_PATH;
     std::string overrides = OVERRIDES_PATH;
-    std::string scanRequest = "/var/lib/purrdometer/scan-request";
+    std::string profiles = PROFILES_PATH;
+    std::string scanRequest = SCAN_REQUEST_PATH;
 };
 
 struct Options {

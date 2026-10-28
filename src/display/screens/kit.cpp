@@ -14,14 +14,14 @@ Font fitFont(Fonts& fonts, const std::string& text, int maxW, int size, bool bol
 
 int iround(double v) { return int(std::nearbyint(v)); }
 
-double bars(Canvas& c, int x0, int y0, int x1, int y1, const std::vector<long long>& values, bool highlightLast, int level)
+double bars(Canvas& c, int x0, int y0, int x1, int y1, const std::vector<double>& values, bool highlightLast, int level)
 {
     const double slot = double(x1 - x0 + 1) / double(values.size());
-    const long long top = std::max(1LL, *std::ranges::max_element(values));
+    const double peak = *std::ranges::max_element(values), top = peak > 0 ? peak : 1;
     for (size_t i = 0; i < values.size(); ++i) {
         int bx0 = iround(x0 + double(i) * slot), bx1 = std::max(bx0, iround(x0 + double(i + 1) * slot) - 2);
-        int h = iround(double(y1 - y0) * double(values[i]) / double(top));
-        if (values[i] && h == 0)
+        int h = iround(double(y1 - y0) * values[i] / top);
+        if (values[i] > 0 && h == 0)
             h = 1;
         if (!h)
             continue;

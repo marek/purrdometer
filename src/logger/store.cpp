@@ -16,10 +16,7 @@ Store::Store(const std::string& path)
     sqlite3_busy_timeout(db_, 5000);
     exec("PRAGMA journal_mode=WAL");
     exec("PRAGMA synchronous=NORMAL");
-    exec("CREATE TABLE IF NOT EXISTS minutes (minute INTEGER PRIMARY KEY, revs INTEGER NOT NULL, "
-         "estimated INTEGER NOT NULL DEFAULT 0)");
-    if (!hasColumn("minutes", "estimated")) // a version 2 database
-        exec("ALTER TABLE minutes ADD COLUMN estimated INTEGER NOT NULL DEFAULT 0");
+    migrate();
     exec("CREATE TABLE IF NOT EXISTS samples (ts REAL NOT NULL, revs INTEGER NOT NULL, "
          "event_time INTEGER NOT NULL, delta INTEGER NOT NULL)");
     exec("CREATE INDEX IF NOT EXISTS samples_ts ON samples(ts)");
@@ -27,8 +24,8 @@ Store::Store(const std::string& path)
          "rssi INTEGER, last_seen REAL)");
     exec("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)");
     exec("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)");
-    exec("INSERT OR IGNORE INTO meta VALUES ('schema_version', '3')");
-    exec("UPDATE meta SET value = '3' WHERE key = 'schema_version'");
+    exec("INSERT OR IGNORE INTO meta VALUES ('schema_version', '4')");
+    exec("UPDATE meta SET value = '4' WHERE key = 'schema_version'");
     exec("INSERT OR IGNORE INTO meta VALUES ('created', strftime('%s','now'))");
     exec("DELETE FROM samples WHERE ts < strftime('%s','now') - 30*86400");
 }
@@ -43,6 +40,26 @@ void Store::exec(const std::string& sql)
         sqlite3_free(err);
         throw std::runtime_error("sqlite: " + msg + " in: " + sql);
     }
+}
+
+void Store::migrate()
+{
+    constexpr const char* MINUTES = "(minute INTEGER NOT NULL, wheel INTEGER NOT NULL DEFAULT 1, "
+                                    "revs INTEGER NOT NULL, estimated INTEGER NOT NULL DEFAULT 0, "
+                                    "PRIMARY KEY (minute, wheel))";
+    exec(std::string("CREATE TABLE IF NOT EXISTS minutes ") + MINUTES);
+    if (hasColumn("minutes", "wheel"))
+        return;
+    // Versions 2 and 3 keyed minutes by the minute alone: every row is profile 1's.
+    std::string estimated = hasColumn("minutes", "estimated") ? "estimated" : "0";
+    exec("BEGIN");
+    exec(std::string("CREATE TABLE minutes_v4 ") + MINUTES);
+    exec("INSERT INTO minutes_v4 (minute, wheel, revs, estimated) SELECT minute, 1, revs, " + estimated +
+         " FROM minutes");
+    exec("DROP TABLE minutes");
+    exec("ALTER TABLE minutes_v4 RENAME TO minutes");
+    exec("COMMIT");
+    log("database: rotations now kept per wheel profile, all history under profile 1");
 }
 
 bool Store::hasColumn(const char* table, const char* column)
@@ -88,14 +105,15 @@ void Store::sensorHeard(const std::string& address, const std::string& name, std
     s.text(1, address).text(2, name).optText(3, kind).optInt(4, rssi).dbl(5, nowSeconds()).step();
 }
 
-void Store::record(double ts, Sample cur, uint32_t delta, int estimated)
+void Store::record(double ts, Sample cur, uint32_t delta, int estimated, int wheel)
 {
     std::scoped_lock lock(mutex_);
     exec("BEGIN");
     if (delta > 0 || estimated > 0) {
-        Statement s(db_, "INSERT INTO minutes VALUES (?1, ?2, ?3) ON CONFLICT(minute) DO UPDATE SET "
+        Statement s(db_, "INSERT INTO minutes (minute, wheel, revs, estimated) VALUES (?1, ?2, ?3, ?4) "
+                         "ON CONFLICT(minute, wheel) DO UPDATE SET "
                          "revs = revs + excluded.revs, estimated = estimated + excluded.estimated");
-        s.i64(1, int64_t(ts) / 60).i64(2, delta).i64(3, estimated).step();
+        s.i64(1, int64_t(ts) / 60).i64(2, wheel).i64(3, delta).i64(4, estimated).step();
     }
     if (delta > 0) {
         Statement r(db_, "INSERT INTO samples VALUES (?1, ?2, ?3, ?4)");

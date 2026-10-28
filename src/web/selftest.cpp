@@ -95,27 +95,49 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     check(web::sameSecret("abc", "abc") && !web::sameSecret("abc", "abd") && !web::sameSecret("", ""), "secret compare");
 
     // Config: /etc, then the web UI's overrides over it.
-    std::string conf = tmpDir + "/selftest.conf", over = tmpDir + "/selftest-settings.ini";
+    std::string conf = tmpDir + "/selftest.conf", over = tmpDir + "/selftest-settings.conf",
+                prof = tmpDir + "/selftest-profiles.conf";
     std::remove(over.c_str());
+    std::remove(prof.c_str());
     std::ofstream(conf) << "[wheel]\nunits = in\nmodel = one-fast-cat\n[web]\nport = 9000\nsettings_access = pin\n";
-    Config cfg = loadConfig(presets, conf, over);
+    Config cfg = loadConfig(presets, conf, over, prof);
     check(cfg.access == SettingsAccess::Off && !cfg.errors.empty(), "pin without a PIN turns saving off");
     std::ofstream(conf) << "[wheel]\nunits = in\nmodel = one-fast-cat\ndiameter = 43.5\n[web]\nport = 9000\n";
-    cfg = loadConfig(presets, conf, over);
+    cfg = loadConfig(presets, conf, over, prof);
     check(cfg.access == SettingsAccess::Lan && cfg.port == 9000 && near(cfg.wheel.diameterM, 43.5 * INCH) &&
-              !cfg.overridden,
-          "settings from /etc, saving from the home network by default");
+              !cfg.overridden && cfg.profilesSeeded && cfg.profiles.list.size() == 1 &&
+              cfg.profiles.list[0].preset == "one-fast-cat",
+          "settings from /etc; the wheel is profile 1, seeded from [wheel]");
     Editable e = cfg.editable;
     e.units = "cm";
     e.model = "grand-ferris";
     e.diameter.reset();
     e.rotate180 = true;
-    check(validate(e, presets).empty(), "valid settings pass");
+    check(validate(e).empty(), "valid settings pass");
+    writeProfiles(cfg.profiles, prof);
     saveOverrides(e, over);
-    cfg = loadConfig(presets, conf, over);
-    check(cfg.overridden && cfg.editable.units == "cm" && cfg.wheel.key == "grand-ferris" && cfg.editable.rotate180 &&
-              cfg.port == 9000,
-          "overrides win over /etc, and an empty diameter clears the measured one");
+    cfg = loadConfig(presets, conf, over, prof);
+    check(cfg.overridden && cfg.editable.units == "cm" && cfg.editable.rotate180 && cfg.port == 9000 &&
+              !cfg.profilesSeeded && near(cfg.wheel.diameterM, 43.5 * INCH),
+          "overrides win over /etc; the wheel stays the profile's");
+    {
+        std::vector<std::string> errs;
+        auto back = readProfiles(prof, errs);
+        std::ifstream in(prof);
+        std::string text((std::istreambuf_iterator<char>(in)), {});
+        check(back && errs.empty() && near(*back->list[0].diameterM, 43.5 * INCH) &&
+                  text.find("diameter = 110.49cm") != std::string::npos,
+              "a profile's diameter is written in cm, whatever is shown");
+        Profiles two = *back;
+        two.list.push_back({.id = two.nextId(), .name = "Spare", .preset = std::string("star-cat-l")});
+        writeProfiles(two, prof);
+        Profiles deleted = *readProfiles(prof, errs);
+        deleted.list.pop_back();
+        writeProfiles(deleted, prof);
+        check(readProfiles(prof, errs)->nextId() == 3, "a deleted profile's number is not reused");
+        writeProfiles(*back, prof);
+        check(validate(Profile{.id = 9, .name = ""}, presets).size() == 2, "a wheel needs a name and a model or size");
+    }
     check(normalizeAddress("ed:7b:c2:c9:c1:d3") == "ED:7B:C2:C9:C1:D3" && !normalizeAddress("ED:7B:C2:C9:C1") &&
               !normalizeAddress("ED-7B-C2-C9-C1-D3"),
           "sensor addresses");
@@ -126,9 +148,9 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     std::remove(over.c_str());
     saveOverrides(e, over);
     Editable bad = e;
-    bad.diameter = std::string("48.5");
+    bad.units = "mm";
     bad.idleRefreshS = 1;
-    check(validate(bad, presets).size() == 2, "invalid settings are refused");
+    check(validate(bad).size() == 2, "invalid settings are refused");
 
     // A real database, a real server, a real client.
     std::string db = tmpDir + "/purrdometer-web-selftest.db";
@@ -153,11 +175,13 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
         sqlite3_close(raw);
     }
     web::Site srv;
+    srv.paths.profiles = prof;
+    std::remove(prof.c_str());
     srv.paths.db = db;
     srv.paths.config = conf;
     srv.paths.overrides = over;
     srv.presets = presets;
-    Stats st = loadStats(db, cal::localDay(std::time(nullptr)));
+    Stats st = loadStats(db, cal::localDay(std::time(nullptr)), circumferences(srv.config()));
     check(st.total == 150 && st.today == 100 && st.live.connected && st.live.rpm == 54, "database read");
     std::string html = web::renderDashboard(srv);
     check(html.find("150") != std::string::npos && html.find("Running") != std::string::npos &&
@@ -180,7 +204,7 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     std::string prefix = std::string(web::TOKEN_COOKIE) + "=";
     std::string token = setCookie.starts_with(prefix) ? setCookie.substr(prefix.size(), 32) : "";
     check(page && page->status == 200 && token.size() == 32 &&
-              page->body.find("value=\"one-fast-cat\" data-m") != std::string::npos,
+              page->body.find("value=\"one-fast-cat\" selected") != std::string::npos,
           "settings page and its form token");
     check(page && page->body.find("CAD-BLE0384139") != std::string::npos &&
               page->body.find("SPD-BLE1") != std::string::npos && page->body.find("battery 85%") != std::string::npos &&
@@ -195,10 +219,41 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     auto noToken = client.Post("/settings", httplib::Params{{"units", "cm"}, {"model", "star-cat-xl"}});
     check(noToken && noToken->status == 403 && access(over.c_str(), F_OK) != 0, "a save without the token is refused");
     auto saved = client.Post("/settings", withCookie, form("115"));
-    Config after = loadConfig(presets, conf, over);
-    check(saved && saved->status == 303 && after.wheel.name.find("measured") != std::string::npos &&
-              near(after.wheel.diameterM, 1.15),
-          "a save from the home network is written and used");
+    Config after = srv.config();
+    check(saved && saved->status == 303 && after.editable.units == "cm" && !after.profilesSeeded &&
+              near(after.wheel.diameterM, 43.5 * INCH),
+          "a save from the home network is written and used; the wheel went to profiles.conf first");
+    auto wheel = [&](httplib::Params p) {
+        p.emplace("token", token);
+        return client.Post("/settings/wheels", withCookie, p);
+    };
+    double km1 = loadStats(db, cal::localDay(std::time(nullptr)), circumferences(srv.config())).totalKm;
+    auto edited = wheel({{"do", "edit"}, {"id", "1"}, {"name", "Living room"}, {"preset", "one-fast-cat"}, {"diameter", "120"}});
+    Config ed = srv.config();
+    double km2 = loadStats(db, cal::localDay(std::time(nullptr)), circumferences(ed)).totalKm;
+    check(edited && edited->status == 303 && edited->get_header_value("Location").find("wheel_saved") != std::string::npos &&
+              near(ed.wheel.diameterM, 1.20) && ed.profiles.list[0].name == "Living room" && near(km2, km1 * 1.20 / (43.5 * INCH)),
+          "editing a wheel corrects the distance of its rotations");
+    auto badSize = wheel({{"do", "edit"}, {"id", "1"}, {"name", "Living room"}, {"preset", ""}, {"diameter", "48.5"}});
+    check(badSize && badSize->get_header_value("Location").find("48.5in") != std::string::npos &&
+              near(srv.config().wheel.diameterM, 1.20),
+          "an implausible diameter is refused with a hint");
+    auto added = wheel({{"do", "new"}, {"name", "Big wheel"}, {"preset", "grand-ferris"}, {"diameter", ""}});
+    Config two = srv.config();
+    Stats afterNew = loadStats(db, cal::localDay(std::time(nullptr)), circumferences(two));
+    check(added && two.profiles.current == 2 && two.wheel.key == "grand-ferris" && near(afterNew.totalKm, km2),
+          "a new wheel is in use, and history keeps its distance");
+    auto keep = wheel({{"do", "delete"}, {"id", "1"}});
+    check(keep && srv.config().profiles.find(1), "a wheel with rotations is not deleted");
+    auto back = wheel({{"do", "use"}, {"id", "1"}});
+    auto gone = wheel({{"do", "delete"}, {"id", "2"}});
+    Config one = srv.config();
+    check(back && gone && one.profiles.current == 1 && !one.profiles.find(2) && one.profiles.nextId() == 3,
+          "switching back, and deleting an unused wheel");
+    auto pageNow = client.Get("/settings");
+    check(pageNow && pageNow->body.find("Living room") != std::string::npos &&
+              pageNow->body.find("in use") != std::string::npos,
+          "the settings page lists the wheels");
     auto chosen = form("115");
     chosen.emplace("sensor", "aa:bb:cc:dd:ee:ff");
     auto savedSensor = client.Post("/settings", withCookie, chosen);
@@ -220,14 +275,16 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
     check(scan && scan->status == 303 && access(srv.paths.scanRequest.c_str(), F_OK) == 0,
           "scan asks the logger through its request file");
     std::remove(srv.paths.scanRequest.c_str());
-    auto refused = client.Post("/settings", withCookie, form("48.5"));
-    check(refused && refused->status == 400 && refused->body.find("did you mean 48.5in") != std::string::npos,
-          "an implausible diameter is refused with a hint");
     auto reset = client.Post("/settings/reset", withCookie, httplib::Params{{"token", token}});
-    check(reset && reset->status == 303 && access(over.c_str(), F_OK) != 0, "reset removes the overrides");
+    check(reset && reset->status == 303 && access(over.c_str(), F_OK) != 0 && access(prof.c_str(), F_OK) == 0,
+          "reset removes the overrides and keeps the wheels");
     std::ofstream(conf) << "[wheel]\nmodel = ferris-g5\n[web]\nsettings_access = off\n";
     auto off = client.Post("/settings", withCookie, form("115"));
-    check(off && off->status == 403 && access(over.c_str(), F_OK) != 0, "settings_access = off refuses saving");
+    auto offWheel = wheel({{"do", "use"}, {"id", "1"}});
+    check(off && off->status == 403 && access(over.c_str(), F_OK) != 0 && offWheel &&
+              offWheel->get_header_value("Location").find("wheel_error") != std::string::npos,
+          "settings_access = off refuses saving, wheels included");
+    std::remove(prof.c_str());
     http.stop();
     listener.join();
     std::remove(db.c_str());

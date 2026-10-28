@@ -16,8 +16,8 @@ void drawCalendar(StatsCtx& x)
     constexpr int COLS = (W - LEFT) / PITCH;
     const cal::Day start = x.today - cal::weekday(x.today) - 7 * (COLS - 1); // a Monday
     long long peak = 0;
-    for (auto& [d, r] : x.s.days(start, x.today))
-        peak = std::max(peak, r);
+    for (auto& [d, k] : x.s.kmDays(start, x.today))
+        peak = std::max(peak, x.turns(k));
     Font small = x.font(9);
     auto& c = x.c;
 
@@ -31,8 +31,8 @@ void drawCalendar(StatsCtx& x)
             if (d > x.today)
                 continue;
             int cx = LEFT + col * PITCH, cy = TOP + row * PITCH;
-            auto it = x.s.daily.find(d);
-            long long v = it == x.s.daily.end() ? 0 : it->second;
+            auto it = x.s.dailyKm.find(d);
+            long long v = it == x.s.dailyKm.end() ? 0 : x.turns(it->second);
             if (v && peak) {
                 int level = std::min(4, 1 + int(4 * v / (peak + 1)));
                 c.shade(cx, cy, cx + CELL - 1, cy + CELL - 1, level);

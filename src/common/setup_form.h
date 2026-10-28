@@ -2,13 +2,15 @@
 // (docs/intents/network/setup.md#the-setup-page).
 #pragma once
 
+#include "common/paths.h"
+
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace purr::setup {
 
-constexpr const char* APPLY_PATH = "/var/lib/purrdometer/setup-apply"; // written by the page, read by the helper
+constexpr const char* APPLY_PATH = SETUP_APPLY_PATH; // written by the page, read by the helper
 
 struct Apply {
     std::string ssid{}, wifiPassword{};

@@ -4,12 +4,16 @@
 #include "logger/accounting.h"
 #include "logger/measurement.h"
 #include "logger/missed_turns.h"
+#include "logger/revolution_counter.h"
+
+#include <sqlite3.h>
 #include "logger/store.h"
 
 #include "common/calendar.h"
 #include "common/stats.h"
 
 #include <cmath>
+#include <ctime>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -88,6 +92,46 @@ int selftest()
     }
     purr::Stats st = purr::loadStats(file, purr::cal::localDay(6000));
     check(st.total == 13 && st.estimated == 2, "totals include estimated turns, shown apart");
+    std::remove(file.c_str());
+
+    // A switch of wheel mid-run: every turn stored once, before under the old profile, after under the new.
+    {
+        Store disk(file);
+        RevolutionCounter counter(disk);
+        counter.setWakeTurns(0);
+        auto crank = [](uint16_t revs, uint16_t t) {
+            return std::vector<uint8_t>{0x02, uint8_t(revs), uint8_t(revs >> 8), uint8_t(t), uint8_t(t >> 8)};
+        };
+        counter.onMeasurement(crank(10, 1000)); // the baseline
+        counter.onMeasurement(crank(11, 2000));
+        counter.onMeasurement(crank(12, 3000));
+        counter.setWheel(2);
+        counter.onMeasurement(crank(13, 4000));
+        counter.onMeasurement(crank(14, 5000));
+    }
+    std::time_t now = std::time(nullptr);
+    st = purr::loadStats(file, purr::cal::localDay(now), {{1, 3.0}, {2, 4.0}});
+    check(st.total == 4 && st.profileRevs[1] == 2 && st.profileRevs[2] == 2,
+          "a wheel switch mid-run loses no turn and moves none");
+    check(std::fabs(st.totalKm - (2 * 3.0 + 2 * 4.0) / 1000) < 1e-9, "each wheel's rotations on its own circumference");
+    std::remove(file.c_str());
+
+    // A version 3 database: minutes keyed by the minute alone.
+    {
+        sqlite3* raw = nullptr;
+        sqlite3_open(file.c_str(), &raw);
+        sqlite3_exec(raw,
+                     "CREATE TABLE minutes (minute INTEGER PRIMARY KEY, revs INTEGER NOT NULL, "
+                     "estimated INTEGER NOT NULL DEFAULT 0);"
+                     "INSERT INTO minutes VALUES (100, 7, 2), (101, 5, 0);",
+                     nullptr, nullptr, nullptr);
+        sqlite3_close(raw);
+        Store migrated(file);
+        migrated.record(101 * 60 + 5, {Counter::Crank, 1, 0}, 1, 0, 2);
+    }
+    st = purr::loadStats(file, purr::cal::localDay(6000), {{1, 3.0}, {2, 4.0}});
+    check(st.total == 15 && st.estimated == 2 && st.profileRevs[1] == 14 && st.profileRevs[2] == 1,
+          "a version 3 database: all history under profile 1, and a minute shared by two wheels");
     std::remove(file.c_str());
     std::cout << (failures ? "FAILED\n" : "all passed\n");
     return failures ? 1 : 0;

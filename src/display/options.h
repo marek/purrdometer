@@ -11,8 +11,8 @@
 namespace purr::display {
 
 struct Options {
-    std::string config = CONFIG_PATH, overrides = OVERRIDES_PATH, wheels = WHEELS_PATH;
-    std::string db = "/var/lib/purrdometer/purrdometer.db";
+    std::string config = CONFIG_PATH, overrides = OVERRIDES_PATH, profiles = PROFILES_PATH, wheels = WHEELS_PATH;
+    std::string db = DB_PATH;
     std::string setupState = setup::STATE_PATH, setupRequest = setup::REQUEST_PATH;
     std::optional<std::string> demoDb, preview;
     std::optional<std::time_t> now;

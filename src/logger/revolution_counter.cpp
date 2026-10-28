@@ -31,6 +31,14 @@ void RevolutionCounter::setWakeTurns(int wakeTurns)
     missed_.configure(wakeTurns);
 }
 
+void RevolutionCounter::setWheel(int profile)
+{
+    std::scoped_lock lock(mutex_);
+    if (profile != wheel_)
+        log("wheel profile ", profile, " from now on");
+    wheel_ = profile; // the count carries on: no turn is lost or counted twice across a switch
+}
+
 void RevolutionCounter::connected(bool firstSinceStart)
 {
     std::scoped_lock lock(mutex_);
@@ -58,7 +66,7 @@ void RevolutionCounter::onMeasurement(const std::vector<uint8_t>& bytes)
         log("counter discontinuity (", last_->revs, " -> ", cur->revs, "): ",
             a.delta ? "the sensor restarted, its " + std::to_string(a.delta) + " added" : "nothing added");
     try {
-        store_.record(now, *cur, a.delta, estimated);
+        store_.record(now, *cur, a.delta, estimated, wheel_);
         if (a.delta > 0)
             store_.setState("last_motion", std::to_string(now));
         if (a.rpm >= 0)

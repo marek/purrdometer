@@ -29,7 +29,7 @@ std::string slug(const char* view) // "30 DAYS" -> "30days"
 int writePreviews(const Config& cfg, const std::string& db, const std::string& dir, std::time_t now)
 {
     Fonts fonts;
-    Stats stats = loadStats(db, cal::localDay(now));
+    Stats stats = loadStats(db, cal::localDay(now), circumferences(cfg));
     std::filesystem::create_directories(dir);
     for (int i = 0; i < int(VIEWS.size()); ++i) {
         std::string path = std::format("{}/{}-{}.png", dir, i, slug(VIEWS[i]));

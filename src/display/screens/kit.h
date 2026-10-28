@@ -8,6 +8,7 @@
 #include "display/canvas.h"
 #include "display/screens/layout.h"
 
+#include <cmath>
 #include <ctime>
 #include <string>
 #include <vector>
@@ -21,7 +22,7 @@ Font fitFont(Fonts& fonts, const std::string& text, int maxW, int size, bool bol
 int iround(double v);
 
 // Bars in the box; the last one hatched when highlightLast. Returns the slot width.
-double bars(Canvas& c, int x0, int y0, int x1, int y1, const std::vector<long long>& values, bool highlightLast = false,
+double bars(Canvas& c, int x0, int y0, int x1, int y1, const std::vector<double>& values, bool highlightLast = false,
             int level = 4);
 
 // A progress strip: an outline that fills from the left.
@@ -39,6 +40,8 @@ struct StatsCtx {
     Font font(int size, bool bold = false) { return fonts.get(size, bold); }
     // The largest size from `size` down to 10 at which `text` fits `maxW`.
     Font fit(const std::string& text, int maxW, int size, bool bold = true) { return fitFont(fonts, text, maxW, size, bold); }
+    // A distance in turns of the current wheel: a day's rotations when there was one wheel.
+    long long turns(double km) const { return std::llround(km * 1000 / wheel.circumferenceM()); }
     void right(int x, int y, const std::string& text, const Font& f) { c.text(x - Canvas::textWidth(text, f), y, text, f); }
     void empty(const std::string& msg = "no rotations yet"); // centred where the content goes
 };

@@ -21,8 +21,6 @@ Editable editableFromForm(const httplib::Request& req, Editable e)
         }
     };
     e.units = req.get_param_value("units");
-    e.model = req.get_param_value("model");
-    e.diameter = optional("diameter");
     e.rotate180 = req.has_param("rotate180");
     number("full_refresh_every", e.fullRefreshEvery);
     number("active_refresh_s", e.activeRefreshS);
@@ -33,17 +31,11 @@ Editable editableFromForm(const httplib::Request& req, Editable e)
     return e;
 }
 
-Editable forForm(Editable e)
+std::string diameterForForm(const std::optional<double>& metres, const std::string& units)
 {
-    if (!e.diameter)
-        return e;
-    try {
-        double m = parseDiameter(*e.diameter, e.units);
-        e.diameter = fixed(e.units == "in" ? m / INCH : m * 100, 1);
-    } catch (const std::invalid_argument&) {
-        // shown as written; the page lists the config error
-    }
-    return e;
+    if (!metres)
+        return "";
+    return fixed(units == "in" ? *metres / INCH : *metres * 100, 1);
 }
 
 } // namespace purr::web

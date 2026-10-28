@@ -2,6 +2,7 @@
 
 #include "web/dashboard_routes.h"
 #include "web/settings_routes.h"
+#include "web/wheel_routes.h"
 
 #include <print>
 
@@ -18,6 +19,7 @@ void addRoutes(const Site& site, httplib::Server& server)
     server.new_task_queue = [] { return new httplib::ThreadPool(WORKER_THREADS); };
     addDashboardRoutes(site, server);
     addSettingsRoutes(site, server);
+    addWheelRoutes(site, server);
     server.set_exception_handler([](const httplib::Request& req, httplib::Response& res, std::exception_ptr ep) {
         try {
             std::rethrow_exception(ep);
@@ -34,6 +36,7 @@ int serve(const Site& site)
     Config cfg = site.config();
     std::string bind = site.bind.value_or(cfg.bind);
     int port = site.port.value_or(cfg.port);
+    ensureProfiles(site);
     httplib::Server server;
     addRoutes(site, server);
     std::println("serving on http://{}:{}/ from {} ({}); settings: {}", bind, port, site.paths.db,

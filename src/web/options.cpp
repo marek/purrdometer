@@ -8,7 +8,7 @@ namespace {
 
 void usage()
 {
-    std::println(stderr, "usage: purrdometer-web [--config PATH] [--overrides PATH] [--db PATH] [--wheels PATH]\n"
+    std::println(stderr, "usage: purrdometer-web [--config PATH] [--overrides PATH] [--profiles PATH] [--db PATH] [--wheels PATH]\n"
                          "       [--bind ADDR] [--port N] [--check-config] [--selftest]");
 }
 
@@ -27,6 +27,7 @@ std::optional<Options> parseOptions(int argc, char** argv)
         else if (!hasValue) return usage(), std::nullopt;
         else if (a == "--config") p.config = next();
         else if (a == "--overrides") p.overrides = next();
+        else if (a == "--profiles") p.profiles = next();
         else if (a == "--db") p.db = next();
         else if (a == "--wheels") p.wheels = next();
         else if (a == "--bind") o.site.bind = next();

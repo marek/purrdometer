@@ -3,6 +3,8 @@
 // of them the web UI may change.
 #pragma once
 
+#include "common/paths.h"
+#include "common/profiles.h"
 #include "common/wheel.h"
 
 #include <optional>
@@ -11,9 +13,6 @@
 
 namespace purr {
 
-constexpr const char* CONFIG_PATH = "/etc/purrdometer/purrdometer.conf";
-constexpr const char* OVERRIDES_PATH = "/var/lib/purrdometer/settings.ini"; // written by the web UI
-constexpr const char* WHEELS_PATH = "/usr/share/purrdometer/wheels.ini";
 
 // Who may save settings from the web UI. Off: nobody, edit the config file.
 enum class SettingsAccess { Lan, Pin, Open, Off };
@@ -22,7 +21,7 @@ enum class SettingsAccess { Lan, Pin, Open, Off };
 struct Editable {
     std::string units = DEFAULT_UNITS;
     std::string model = DEFAULT_WHEEL;
-    std::optional<std::string> diameter; // as written, in `units` when bare
+    std::optional<std::string> diameter; // as written, in `units` when bare; with model, seeds profile 1
     bool rotate180 = false;
     int fullRefreshEvery = 20;
     int activeRefreshS = 5;
@@ -33,7 +32,10 @@ struct Editable {
 
 struct Config {
     Editable editable;
-    Wheel wheel;               // resolved from editable
+    Profiles profiles;         // profiles.conf, or profile 1 seeded from [wheel]
+    bool profilesSeeded = false; // no profiles.conf yet
+    std::map<int, Wheel> wheels; // each profile's wheel
+    Wheel wheel;               // the current profile's
     std::string bind = "0.0.0.0";
     int port = 8080;
     SettingsAccess access = SettingsAccess::Lan;
@@ -44,10 +46,13 @@ struct Config {
 
 // Reads conf, then overrides over it. Invalid values are reported in errors and fall back.
 Config loadConfig(const WheelPresets& presets, const std::string& conf = CONFIG_PATH,
-                  const std::string& overrides = OVERRIDES_PATH);
+                  const std::string& overrides = OVERRIDES_PATH, const std::string& profiles = PROFILES_PATH);
+
+// Each profile's wheel circumference in metres, for distance from stored rotations.
+std::map<int, double> circumferences(const Config& c);
 
 // Checks a set of editable values; returns the problems, empty when they are valid.
-std::vector<std::string> validate(const Editable& e, const WheelPresets& presets);
+std::vector<std::string> validate(const Editable& e);
 
 // Writes the editable values atomically (temp file + rename). Throws std::runtime_error.
 void saveOverrides(const Editable& e, const std::string& path = OVERRIDES_PATH);

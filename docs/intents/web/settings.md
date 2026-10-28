@@ -17,10 +17,11 @@ without a restart.
 | File | Owner | Holds |
 |---|---|---|
 | `/etc/purrdometer/purrdometer.conf` | root, a conffile of the package | The defaults, and everything the web may not change |
-| `/var/lib/purrdometer/settings.ini` | the `purrdometer` user, written by `purrdometer-web` | What was saved from the gear page; wins over the file above, key by key |
+| `/var/lib/purrdometer/settings.conf` | the `purrdometer` user, written by `purrdometer-web` | What was saved from the gear page; wins over the file above, key by key |
+| `/var/lib/purrdometer/profiles.conf` | the `purrdometer` user, written by `purrdometer-web` | The wheel profiles ([../data/wheels.md](../data/wheels.md#profiles)) |
 
-Reset deletes `settings.ini`, which returns every setting to `/etc`. An empty
-`diameter =` in `settings.ini` clears a measured diameter set in `/etc`.
+Reset deletes `settings.conf`, which returns every setting to `/etc`; it
+never touches the profiles, which are history.
 Writes go to a temporary file and are renamed into place, so a reader never
 sees half a file.
 
@@ -29,8 +30,7 @@ sees half a file.
 | Setting | Values |
 |---|---|
 | `[wheel] units` | `cm` or `in`, as a toggle; switching converts a typed diameter and relabels the wheel sizes |
-| `[wheel] model` | Any preset from `wheels.ini`, listed with its running diameter |
-| `[wheel] diameter` | A measured running diameter in the chosen units, or empty for the preset's |
+| Wheels | The profiles in `profiles.conf`: below |
 | `[display] rotate180` | On or off |
 | `[display] active_refresh_s`, `idle_refresh_s`, `full_refresh_every` | Whole numbers in 1–60, 10–3600 and 1–200 |
 | `[sensor] address` | A sensor's address, or empty for automatic |
@@ -39,6 +39,19 @@ sees half a file.
 Every value is checked the same way the config file's are
 ([../data/wheels.md](../data/wheels.md)); a rejected save says why and writes
 nothing.
+
+### Wheels
+
+| Part | Shows or does |
+|---|---|
+| The list | Every profile: its name, its wheel (the preset's name, or "custom") and running diameter, and its distance; the current one marked **in use** |
+| Edit | Name, preset and measured diameter of any profile. Saving says how far that profile's distance moves ("839 km → 861 km") and changes no other |
+| New wheel | A name, a preset and an optional measured diameter; saved as a new profile and made current. Next to it: "Switch when you move the sensor to the new wheel" |
+| Use this wheel | Makes another profile current, for a wheel brought back |
+| Delete | Shown only on a profile with no rotations that is not in use |
+
+Every wheel change passes the same checks as the other settings and the same
+access rule; a rejected one says why and writes nothing.
 
 ### The sensor section
 
@@ -86,5 +99,7 @@ listens, could lock itself out or open itself up.
 `purrdometer-web --selftest`: address classes, the layering, validation, and a
 real server and client: the page and its token, a save without the token
 refused, a save written and used, an implausible diameter refused with its
-hint, reset, and `off` refusing. The display reads the settings through the
+hint, reset (which keeps the profiles), and `off` refusing; profiles seeded
+from `[wheel]`, edited, added, switched and deleted, a profile with rotations
+not deleted. The display reads the settings through the
 same C++ code.

@@ -12,11 +12,12 @@
 namespace purr::web {
 
 struct Paths {
-    std::string db = "/var/lib/purrdometer/purrdometer.db";
+    std::string db = DB_PATH;
     std::string config = CONFIG_PATH;
     std::string overrides = OVERRIDES_PATH;
+    std::string profiles = PROFILES_PATH;
     std::string wheels = WHEELS_PATH;
-    std::string scanRequest = "/var/lib/purrdometer/scan-request"; // touched to ask the logger for a scan
+    std::string scanRequest = SCAN_REQUEST_PATH; // touched to ask the logger for a scan
 };
 
 struct Site {
@@ -25,7 +26,7 @@ struct Site {
     std::optional<std::string> bind;
     std::optional<int> port;
 
-    Config config() const { return loadConfig(presets, paths.config, paths.overrides); }
+    Config config() const { return loadConfig(presets, paths.config, paths.overrides, paths.profiles); }
 };
 
 } // namespace purr::web

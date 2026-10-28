@@ -13,7 +13,7 @@ std::string renderDashboard(const Site& site)
 {
     std::time_t now = std::time(nullptr);
     Config cfg = site.config();
-    Dashboard view = buildDashboard(loadStats(site.paths.db, cal::localDay(now)), cfg.wheel, now);
+    Dashboard view = buildDashboard(loadStats(site.paths.db, cal::localDay(now), circumferences(cfg)), cfg.wheel, now);
     view.configErrors = cfg.errors;
     view.units = cfg.editable.units;
     std::string html;

@@ -137,16 +137,12 @@ const char* accessName(SettingsAccess a)
     return "lan";
 }
 
-std::vector<std::string> validate(const Editable& e, const WheelPresets& presets)
+std::vector<std::string> validate(const Editable& e)
 {
     std::vector<std::string> problems;
+    // [wheel] model and diameter only seed profile 1: a wheel is checked as a profile.
     if (!validUnits(e.units))
         problems.push_back("units must be cm or in");
-    try {
-        resolveWheel(presets, e.model, e.diameter, e.units);
-    } catch (const std::invalid_argument& ex) {
-        problems.push_back(ex.what());
-    }
     auto in = [](int v, Range r) { return v >= r.lo && v <= r.hi; };
     if (!in(e.fullRefreshEvery, FULL_REFRESH_EVERY))
         problems.push_back(rangeError("full_refresh_every", FULL_REFRESH_EVERY));
@@ -161,7 +157,8 @@ std::vector<std::string> validate(const Editable& e, const WheelPresets& presets
     return problems;
 }
 
-Config loadConfig(const WheelPresets& presets, const std::string& conf, const std::string& overrides)
+Config loadConfig(const WheelPresets& presets, const std::string& conf, const std::string& overrides,
+                  const std::string& profiles)
 {
     Config c;
     if (auto ini = Ini::load(conf)) {
@@ -197,14 +194,31 @@ Config loadConfig(const WheelPresets& presets, const std::string& conf, const st
         c.overridden = true;
         apply(*ini, c.editable, c.errors);
     }
-    try {
-        c.wheel = resolveWheel(presets, c.editable.model, c.editable.diameter, c.editable.units);
-    } catch (const std::invalid_argument& e) {
-        // Keep running on the default wheel; pages and --check-config show the error.
-        c.errors.push_back(std::string("[wheel] ") + e.what());
-        c.wheel = resolveWheel(presets, std::nullopt, std::nullopt);
+    if (auto read = readProfiles(profiles, c.errors)) {
+        c.profiles = *read;
+    } else {
+        c.profiles = seedProfiles(c.editable.model, c.editable.diameter, c.editable.units, presets, c.errors);
+        c.profilesSeeded = true;
     }
+    for (auto& p : c.profiles.list) {
+        try {
+            c.wheels[p.id] = wheelOf(p, presets);
+        } catch (const std::invalid_argument& e) {
+            // Keep running on the default wheel; pages and --check-config show the error.
+            c.errors.push_back(p.name + ": " + e.what());
+            c.wheels[p.id] = resolveWheel(presets, std::nullopt, std::nullopt);
+        }
+    }
+    c.wheel = c.wheels.at(c.profiles.current);
     return c;
+}
+
+std::map<int, double> circumferences(const Config& c)
+{
+    std::map<int, double> out;
+    for (auto& [id, w] : c.wheels)
+        out[id] = w.circumferenceM();
+    return out;
 }
 
 void saveOverrides(const Editable& e, const std::string& path)
@@ -217,9 +231,7 @@ void saveOverrides(const Editable& e, const std::string& path)
         out << "# Written by the purrdometer web UI. Overrides /etc/purrdometer/purrdometer.conf;\n"
                "# delete this file (or use Reset in the UI) to go back to it.\n\n"
                "[wheel]\n"
-            << "units = " << e.units << "\n"
-            << "model = " << e.model << "\n"
-            << "diameter = " << e.diameter.value_or("") << "\n\n"
+            << "units = " << e.units << "\n\n"
             << "[display]\n"
             << "rotate180 = " << (e.rotate180 ? "true" : "false") << "\n"
             << "full_refresh_every = " << e.fullRefreshEvery << "\n"

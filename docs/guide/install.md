@@ -60,7 +60,10 @@ over ten minutes there.
 ## Upgrade
 
 Build and install the new package the same way. Settings in
-`/etc/purrdometer/purrdometer.conf` and the history are kept.
+`/etc/purrdometer/purrdometer.conf`, the settings page's, your wheels and the
+history are kept. Upgrading from 1.0 moves `/var/lib/purrdometer/settings.ini`
+to `settings.conf`, and makes the wheel set there your first wheel profile,
+with all history under it; distances do not change.
 
 When Raspberry Pi OS upgrades `bluez`, apt may ask about a changed
 `/etc/bluetooth/main.conf`. Keep the installed version (the default answer):

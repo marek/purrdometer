@@ -2,15 +2,17 @@
 // what the screen and the setup page show (docs/intents/network/setup.md).
 #pragma once
 
+#include "common/paths.h"
+
 #include <ctime>
 #include <string>
 #include <vector>
 
 namespace purr::setup {
 
-constexpr const char* STATE_PATH = "/run/purrdometer-setup/state";
-constexpr const char* NETWORKS_PATH = "/run/purrdometer-setup/networks";
-constexpr const char* REQUEST_PATH = "/var/lib/purrdometer/setup-request"; // touched to start setup
+constexpr const char* STATE_PATH = SETUP_STATE_PATH;
+constexpr const char* NETWORKS_PATH = SETUP_NETWORKS_PATH;
+constexpr const char* REQUEST_PATH = SETUP_REQUEST_PATH; // touched to start setup
 constexpr const char* HOTSPOT_ADDRESS = "10.42.0.1";
 constexpr const char* HOTSPOT_PREFIX = "10.42.0.";
 

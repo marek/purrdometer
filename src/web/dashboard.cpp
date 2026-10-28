@@ -1,23 +1,26 @@
 #include "web/dashboard.h"
 
 #include <algorithm>
+#include <cmath>
 #include <format>
 
 namespace purr {
 
 namespace {
 
-std::vector<Bar> bars(const std::vector<DayCount>& rows, const Wheel& wheel, cal::Day today, const std::string& unit)
+std::vector<Bar> bars(const std::vector<DayKm>& rows, cal::Day today, const std::string& unit)
 {
-    long long peak = 1, total = 0;
-    for (auto& [d, r] : rows) {
-        peak = std::max(peak, r);
-        total += r;
+    double peak = 0, total = 0;
+    for (auto& [d, k] : rows) {
+        peak = std::max(peak, k);
+        total += k;
     }
+    if (peak <= 0)
+        peak = 1;
     std::vector<Bar> out;
-    long long acc = 0;
-    for (auto& [d, r] : rows) {
-        acc += r;
+    double acc = 0;
+    for (auto& [d, k] : rows) {
+        acc += k;
         Bar b;
         if (unit == "day") {
             b.label = cal::weekdayAbbr(d) + " " + cal::monthDay(d);
@@ -30,9 +33,9 @@ std::vector<Bar> bars(const std::vector<DayCount>& rows, const Wheel& wheel, cal
             b.label = std::format("{} {}", cal::monthAbbr(d), cal::yearOf(d));
             b.tick = cal::monthAbbr(d);
         }
-        b.km = wheel.km(r);
-        b.height = double(r) / peak;
-        b.cumulative = total ? double(acc) / total : 0;
+        b.km = k;
+        b.height = k / peak;
+        b.cumulative = total > 0 ? acc / total : 0;
         out.push_back(b);
     }
     return out;
@@ -49,12 +52,12 @@ Dashboard buildDashboard(const Stats& s, const Wheel& wheel, std::time_t now)
 
     v.totalRevs = s.total;
     v.todayRevs = s.today;
-    v.totalKm = wheel.km(s.total);
-    v.todayKm = wheel.km(s.today);
+    v.totalKm = s.totalKm;
+    v.todayKm = s.todayKm;
     v.firstDay = s.firstDay;
     v.activeDays = s.daily.size();
-    for (auto& [d, r] : s.daily)
-        v.bestKm = std::max(v.bestKm, wheel.km(r));
+    for (auto& [d, k] : s.dailyKm)
+        v.bestKm = std::max(v.bestKm, k);
 
     v.running = s.live.running(double(now));
     v.connected = s.live.connected;
@@ -64,29 +67,30 @@ Dashboard buildDashboard(const Stats& s, const Wheel& wheel, std::time_t now)
         v.lastMotionAgo = double(now) - *s.live.lastMotion;
     v.battery = s.live.battery;
 
-    auto last30 = s.days(today - 29, today);
-    v.last30 = bars(last30, wheel, today, "day");
-    long long revs30 = 0;
-    for (auto& [d, r] : last30) {
-        revs30 += r;
-        v.last30Active += r > 0;
+    auto last30 = s.kmDays(today - 29, today);
+    v.last30 = bars(last30, today, "day");
+    for (auto& [d, k] : last30) {
+        v.last30Km += k;
+        v.last30Active += k > 0;
     }
-    v.last30Km = wheel.km(revs30);
     v.last30AvgKm = v.last30Km / 30;
 
-    auto [unit, history] = s.buckets(today);
+    auto [unit, history] = s.kmBuckets(today);
     v.historyUnit = unit;
-    v.history = bars(history, wheel, today, unit);
+    v.history = bars(history, today, unit);
 
     cal::Day start = today - cal::weekday(today) - 7 * (Dashboard::CALENDAR_WEEKS - 1);
-    auto shown = s.days(start, today);
+    // Shades in turns of the current wheel: a day's rotations when there was one wheel.
+    auto turns = [&](double k) { return std::llround(k * 1000 / wheel.circumferenceM()); };
+    auto shown = s.kmDays(start, today);
     long long peak = 0;
-    for (auto& [d, r] : shown)
-        peak = std::max(peak, r);
-    for (auto& [d, r] : shown) {
+    for (auto& [d, k] : shown)
+        peak = std::max(peak, turns(k));
+    for (auto& [d, k] : shown) {
+        long long r = turns(k);
         Cell c;
         c.day = d;
-        c.km = wheel.km(r);
+        c.km = k;
         c.level = (r && peak) ? std::min(4, 1 + int(4 * r / (peak + 1))) : 0;
         c.week = int((d - start) / 7);
         c.weekday = cal::weekday(d);

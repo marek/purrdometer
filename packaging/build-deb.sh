@@ -17,8 +17,10 @@ PKG=purrdometer
 OUT="$ROOT/dist/${PKG}_${VERSION}_${ARCH}.deb"
 
 echo "== build + test"
-make all
-make test
+# The directories the package installs to: the programs are built with the same ones.
+DIRS=(PREFIX=/usr SYSCONFDIR=/etc LOCALSTATEDIR=/var RUNSTATEDIR=/run)
+make "${DIRS[@]}" all
+make "${DIRS[@]}" test
 
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
@@ -29,7 +31,7 @@ for bin in purrdometer-logger purrdometer-web purrdometer-display; do
     install -D -m 755 "bin/$bin" "$STAGE/usr/bin/$bin"
     strip --strip-unneeded "$STAGE/usr/bin/$bin"
 done
-install -D -m 644 data/wheels.ini "$STAGE/usr/share/purrdometer/wheels.ini"
+install -D -m 644 data/wheels.conf "$STAGE/usr/share/purrdometer/wheels.conf"
 install -D -m 755 system/btdiag.sh "$STAGE/usr/sbin/purrdometer-btdiag"
 
 install -D -m 644 packaging/systemd/purrdometer-logger.service "$STAGE/lib/systemd/system/purrdometer-logger.service"
@@ -44,7 +46,7 @@ chmod 644 "$STAGE/usr/share/doc/$PKG/copyright"
 
 echo "== control"
 install -d -m 755 "$STAGE/DEBIAN"
-install -m 755 packaging/debian/postinst packaging/debian/prerm packaging/debian/postrm "$STAGE/DEBIAN/"
+install -m 755 packaging/debian/preinst packaging/debian/postinst packaging/debian/prerm packaging/debian/postrm "$STAGE/DEBIAN/"
 install -m 644 packaging/debian/conffiles "$STAGE/DEBIAN/"
 
 # Shared-library dependencies of the binaries, computed the Debian way.

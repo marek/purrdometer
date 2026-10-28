@@ -1,6 +1,8 @@
 // DejaVu Sans and Sans Bold through FreeType, at any pixel size.
 #pragma once
 
+#include "common/paths.h"
+
 #include <string>
 #include <string_view>
 #include <vector>
@@ -10,7 +12,6 @@ struct FT_FaceRec_;
 
 namespace purr::display {
 
-constexpr const char* FONT_DIR = "/usr/share/fonts/truetype/dejavu";
 
 class Fonts;
 

@@ -53,7 +53,7 @@ listing them.
 | [display/touch-bar.md](display/touch-bar.md) | The tab strip: placement, hit areas, orientation, the touch controller |
 | [display/refresh.md](display/refresh.md) | When the panel redraws: partial vs full, ghosting, live updates, sleep |
 | [web/dashboard.md](web/dashboard.md) | `purrdometer-web`: the stack, routes, what the page shows, access, the service |
-| [web/settings.md](web/settings.md) | The gear page: what it changes, `settings.ini` over `/etc`, who may save (`lan`, `pin`, `open`, `off`), how changes are picked up |
+| [web/settings.md](web/settings.md) | The gear page: what it changes, `settings.conf` over `/etc`, the wheel profiles, who may save (`lan`, `pin`, `open`, `off`), how changes are picked up |
 | [network/setup.md](network/setup.md) | Setup mode: when it starts and ends, the hotspot, the e-paper, the setup page, the helper |
 | [web/pages.md](web/pages.md) | `.page` files compiled to C++ by `pagec`: tags, escaping, formatters |
 | [bugs/supervision-timeout-drops.md](bugs/supervision-timeout-drops.md) | The link dropping every 7–16 s: a 420 ms supervision timeout on a ~200 ms interval |

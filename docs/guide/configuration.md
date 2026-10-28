@@ -1,30 +1,42 @@
 # Configuration
 
-The easiest way is the gear on the [web dashboard](web.md#settings). Everything
-can also be set in `/etc/purrdometer/purrdometer.conf`; what the gear saves goes
-to `/var/lib/purrdometer/settings.ini` and wins over that file. After editing
-the config file, check it and restart the screen and the dashboard:
+The easiest way is the gear on the [web dashboard](web.md#settings). The
+screen, sensor and web settings can also be set in
+`/etc/purrdometer/purrdometer.conf`; what the gear saves goes to
+`/var/lib/purrdometer/settings.conf` and wins over that file. Your wheels are
+in `/var/lib/purrdometer/profiles.conf`, set from the gear. After editing the
+config file, check it and restart the screen and the dashboard:
 
 ```sh
 purrdometer-display --check-config
 sudo systemctl restart purrdometer-display purrdometer-web
 ```
 
-`--check-config` prints the wheel the file resolves to and its distance per
-rotation, and fails on any mistake.
+`--check-config` prints the wheel in use and its distance per rotation, and
+fails on any mistake.
 
-## Wheel
+## Wheels
 
-Distance is rotations × the circumference of the surface the cat runs on.
-Only rotations are stored, so changing the wheel recomputes every distance,
-history included.
+Distance is rotations × the circumference of the surface the cat runs on. Each
+of your wheels is a **profile**: a name, a model, and a measured diameter if
+you have one. Every rotation is stored under the wheel in use when it was
+counted, so:
 
-Pick a known wheel:
+- **Correcting a wheel** (the wrong model, a better measurement) changes the
+  distance of that wheel's rotations, history included, and no other.
+- **A new wheel** is a new profile. The old wheel keeps its distance, and
+  rotations from then on are the new one's. Add it when you move the sensor.
+- Switching back to an earlier wheel is **Use this wheel**.
+
+Wheels are set on the settings page ([web](web.md#settings)). On a new
+install, the first one comes from `[wheel]` here:
 
 ```ini
 [wheel]
 model = ferris-g5
 ```
+
+The models:
 
 | `model` | Wheel | Running diameter | Per rotation |
 |---|---|---|---|
@@ -39,28 +51,22 @@ the outside size of its wheels (106 cm and 120 cm, 41.7 in and 47.2 in), so thei
 diameters are estimates: measure yours and set `diameter` for accurate
 distances.
 
-Or measure the running surface (the inside of the track, not the outside of
-the wheel):
+A measured diameter is the running surface: the inside of the track, not the
+outside of the wheel. It wins over the model's, and a wheel that isn't listed
+needs only that.
 
-```ini
-[wheel]
-units = cm
-model = ferris-g5
-diameter = 123
-```
+`units` is `cm` (the default) or `in`: how wheel sizes are shown, and what a
+plain number typed as a diameter means. You can always write the unit instead:
+`48.5in` or `1.23m` works whatever `units` says. A diameter is kept in cm
+whatever is shown, so switching `units` never changes a distance.
 
-`units` is `cm` (the default) or `in`. A plain number in `diameter` is in those
-units, and every wheel size the tools print is shown in them first. You can
-always write the unit instead: `diameter = 48.5in` or `1.23m` works whatever
-`units` says. `diameter` overrides the model's.
+A size no cat wheel has (outside 50–200 cm) is refused. If you type `48.5`
+with `units = cm`, the page answers `did you mean 48.5in?` instead of using a
+48 cm wheel.
 
-A size no cat wheel has (outside 50–200 cm) is refused. If you write
-`diameter = 48.5` with `units = cm`, `--check-config` answers
-`did you mean 48.5in?` instead of using a 48 cm wheel.
+With no wheel set the Ferris G5 is used. Distances are always in km.
 
-With no `[wheel]` section the Ferris G5 is used. Distances are always in km.
-
-To add a wheel model for everyone, add a section to `data/wheels.ini` with
+To add a wheel model for everyone, add a section to `data/wheels.conf` with
 the maker's inner diameter and where it came from. The screen and the
 dashboard both read that file ([development](development.md)).
 

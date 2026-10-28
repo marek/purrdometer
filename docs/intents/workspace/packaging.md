@@ -18,7 +18,7 @@ rotation history survives both.
 | Name, architecture | `purrdometer`, the build machine's architecture (`arm64` on the Pi); built natively on the Pi |
 | Build | `packaging/build-deb.sh`: runs `make test` first and refuses to package a failing tree; artifacts in `dist/`. Run in `packaging/build-in-container.sh` on a developer machine, in the release workflow, or on the Pi. The build dependencies are listed once, in `packaging/build-deps` |
 | Version | The git tag, said by `tools/version.sh`: a commit tagged `v<version>` is that version, the highest of several tags on one commit; a commit past the last tag is `<version>.r<commits since>.g<short hash>`, which dpkg orders after that tag and before the next; a commit with no tag behind it is `0.0.0.r<commits>.g<short hash>`. A tag dpkg cannot take fails the build |
-| Contents | `/usr/bin/purrdometer-logger`, `/usr/bin/purrdometer-web`, `/usr/bin/purrdometer-display`, the wheel presets in `/usr/share/purrdometer/wheels.ini`, `/usr/sbin/purrdometer-btdiag`, both systemd units in `/lib/systemd/system`, `/etc/purrdometer/purrdometer.conf`, `/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf`, the README in `/usr/share/doc/purrdometer` |
+| Contents | `/usr/bin/purrdometer-logger`, `/usr/bin/purrdometer-web`, `/usr/bin/purrdometer-display`, the wheel catalogue in `/usr/share/purrdometer/wheels.conf`, `/usr/sbin/purrdometer-btdiag`, both systemd units in `/lib/systemd/system`, `/etc/purrdometer/purrdometer.conf`, `/etc/NetworkManager/conf.d/purrdometer-wifi-powersave.conf`, the README in `/usr/share/doc/purrdometer` |
 | Conffiles | `/etc/purrdometer/purrdometer.conf` and the NetworkManager drop-in: local edits survive upgrades |
 | Depends | the three binaries' shared libraries computed by `dpkg-shlibdeps`, plus BlueZ, `adduser` and the display's font; `network-manager` and `sqlite3` are Recommends |
 | Prompts | none: the maintainer scripts are non-interactive |
@@ -50,6 +50,7 @@ their state directory.
 | Action | Result |
 |---|---|
 | Install, upgrade | User and state directory exist, each BlueZ setting is present exactly once, all three services enabled and restarted |
+| Upgrade from a version with `settings.ini` | `/var/lib/purrdometer/settings.ini` is renamed `settings.conf` by `preinst`, before the new programs are unpacked, once, and only when no `settings.conf` exists; nothing in it changes |
 | Remove | Services stopped and disabled; conffiles, system settings and data kept |
 | Purge | Every marker line and the setting after it removed from `main.conf` and BlueZ restarted; the history in `/var/lib/purrdometer` and the `purrdometer` user that owns it are kept, and the purge says so |
 | Reinstall after purge | Same as a first install; the kept history is picked up |

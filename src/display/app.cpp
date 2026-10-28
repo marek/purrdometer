@@ -69,7 +69,8 @@ bool App::followHold()
         }
         if (auto p = hold.progress(now)) {
             std::time_t t = std::time(nullptr);
-            screen_.show(render(fonts_, loadStats(paths_.db, cal::localDay(t)), config_.get().wheel, view_, t, *p));
+            screen_.show(render(fonts_, loadStats(paths_.db, cal::localDay(t), circumferences(config_.get())),
+                                config_.get().wheel, view_, t, *p));
             holdShown_ = true;
             return true;
         }
@@ -85,7 +86,7 @@ void App::drawStats()
 {
     const Config& cfg = config_.get();
     std::time_t t = std::time(nullptr);
-    Stats stats = loadStats(paths_.db, cal::localDay(t));
+    Stats stats = loadStats(paths_.db, cal::localDay(t), circumferences(cfg));
     screen_.show(render(fonts_, stats, cfg.wheel, view_, t));
     bool running = stats.live.running(double(t));
     nextDraw_ = Clock::now() + std::chrono::seconds(running ? cfg.editable.activeRefreshS : cfg.editable.idleRefreshS);

@@ -19,11 +19,20 @@ your browser's light or dark setting.
 
 ## Settings
 
-The gear at the top right opens the settings: the wheel (a preset, or your
-measured diameter, in cm or inches), the sensor (which one, how to mount it,
-a live test: [the sensor](sensor.md)) and the screen (upside down, how often
-it updates). **Save** applies them at once to the dashboard, and to the screen
-before its next update. **Reset to defaults** goes back to the config file.
+The gear at the top right opens the settings:
+
+- **Wheels:** your wheels, each with its model or measured diameter and its
+  distance. **Edit** corrects a wheel, and says how far its distance moved.
+  **New wheel** adds one and puts it in use: add it when you move the sensor,
+  and the old wheel keeps its distance. **Use this wheel** switches back to an
+  earlier one ([configuration](configuration.md#wheels)).
+- **Units:** cm or inches, for how sizes are shown.
+- **Sensor:** which one, how to mount it, a live test ([the sensor](sensor.md)).
+- **Screen:** upside down, how often it updates.
+
+**Save** applies them at once to the dashboard, and to the screen before its
+next update. **Reset to defaults** goes back to the config file; it never
+touches your wheels.
 
 By default any device on your home network can save. To change that, set
 `settings_access` in `/etc/purrdometer/purrdometer.conf`:
@@ -42,9 +51,10 @@ only in the config file.
 ## JSON
 
 `http://whiskerwheel:8080/api/stats` has the same numbers for scripts: the
-wheel, totals, today, live state and every day with rotations.
+wheel in use, totals (with `estimated_rotations`, the turns the sensor missed
+waking up), today, live state and every day with rotations.
 
-## Settings
+## In the config file
 
 In `/etc/purrdometer/purrdometer.conf`:
 

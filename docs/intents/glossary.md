@@ -19,11 +19,12 @@ narrower one here, the narrower one is given.
 | **Logger** | `purrdometer-logger`, the C++ BlueZ client that writes the database |
 | **Display** | `purrdometer-display`, the C++ program that draws the screens and reads the touch bar |
 | **Web dashboard** | `purrdometer-web`, the C++ server for the same history in a browser ([web/dashboard.md](web/dashboard.md)) |
-| **Gear page, settings.ini** | The dashboard's settings page and the file it saves to, which wins over `/etc/purrdometer/purrdometer.conf` ([web/settings.md](web/settings.md)) |
+| **Gear page, settings.conf** | The dashboard's settings page and the file it saves to, which wins over `/etc/purrdometer/purrdometer.conf` ([web/settings.md](web/settings.md)) |
 | **Page, pagec** | A `.page` file, HTML with C++ in `<% %>` tags, and the compiler that turns it into a C++ function ([web/pages.md](web/pages.md)) |
 | **Database** | `/var/lib/purrdometer/purrdometer.db` ([data/storage.md](data/storage.md)) |
 | **Minute bucket** | A row of `minutes`: rotations counted in one wall-clock minute; the permanent history |
-| **Wheel, preset** | A wheel model with a known running diameter, picked by key such as `ferris-g5`; listed in `data/wheels.ini` ([data/wheels.md](data/wheels.md)) |
+| **Wheel, preset** | A wheel model with a known running diameter, picked by key such as `ferris-g5`; listed in the catalogue `data/wheels.conf` ([data/wheels.md](data/wheels.md)) |
+| **Profile** | One of your wheels: a name, a preset or a measured diameter; rotations are stored under the profile in use ([data/wheels.md](data/wheels.md#profiles)) |
 | **Running diameter** | The diameter of the surface the cat runs on: the inside of the track, not the outer size |
 | **Screen** | One of NOW, 30 DAYS, CALENDAR, ALL TIME ([display/screens.md](display/screens.md)) |
 | **Touch bar** | The strip of four tabs along the bottom edge of the screen ([display/touch-bar.md](display/touch-bar.md)) |
