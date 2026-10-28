@@ -23,8 +23,9 @@ ones.
 | Logger restarted, sensor kept counting | The previous measurement and its wall time are kept in `state` ([storage.md](storage.md)), so the delta across the gap is counted, within plausibility |
 | Rotations across a gap | Attributed to the minute of the measurement that reveals them; when within the gap they happened is unknown |
 | Wrap ambiguity | 2¹⁶ rotations (~250 km on the G5) unseen in one gap are lost on a cadence sensor; no gap is that long in practice |
-| Sensor switched | The previous measurement is forgotten; the new sensor's first measurement is a new baseline |
+| Sensor switched | The previous measurement is forgotten, all of it or none (`state` is cleared in one statement); the new sensor's first measurement is a new baseline, and what arrives before the new sensor has connected is not counted. When the stored measurement cannot be removed the switch does not happen: the old sensor stays followed and counted, and the switch is tried again, since a stored measurement that survived would be resumed under the new sensor after a restart |
 | Repeated measurement, no new rotation | Delta 0; rpm 0; stored only as state |
+| A measurement that cannot be stored | Nothing of it is kept, in the database or in the logger's memory: the previous measurement, its wall time and the wake state stay as they were, so the next measurement that is stored counts these turns with its own, once. The logger logs the failure and goes on |
 
 ## Turns the sensor misses
 
@@ -67,4 +68,7 @@ difference is 0 or the gap is a minute or more.
 16-bit wrap, a restarted sensor's count added, an implausible restart count
 refused, implausible jump, rotations kept across an hour offline, no motion;
 wake turns at the first counted turn of a new connection and not on a logger
-restart, none after a stop, off at 0, totals with estimates.
+restart, none after a stop, off at 0, totals with estimates; a write that
+fails after its transaction began leaves the history as it was, the next
+write succeeds, and the turns of the failed measurement are counted once by
+the next, with the wake turns still owed.

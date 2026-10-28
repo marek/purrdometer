@@ -10,6 +10,7 @@
 
 namespace purr::web {
 
+// Under a SaveLock.
 void ensureProfiles(const Site& site);
 
 void addWheelRoutes(const Site& site, httplib::Server& server);

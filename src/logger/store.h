@@ -40,10 +40,15 @@ public:
                      std::optional<std::string> kind = std::nullopt);
 
     // A sample, the revolutions it added and the missed turns estimated with
-    // it, stored under wheel profile `wheel`, and the counter it leaves.
-    void record(double ts, Sample cur, uint32_t delta, int estimated = 0, int wheel = 1);
+    // it, stored under wheel profile `wheel`, the counter it leaves and the
+    // live state it sets (last_motion when it moved, rpm when known), all in
+    // one transaction: on a throw nothing was written and the connection is
+    // ready for the next call.
+    void record(double ts, Sample cur, uint32_t delta, int estimated = 0, int wheel = 1,
+                std::optional<int> rpm = std::nullopt);
 
-    // A new sensor: nothing is counted across the switch.
+    // A new sensor: nothing is counted across the switch. Atomic; throws, with the counter still
+    // kept, when the database cannot be written.
     void forgetCounter();
 
 private:

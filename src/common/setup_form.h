@@ -21,7 +21,10 @@ struct Apply {
 };
 
 std::optional<Apply> readApply(const std::string& path = APPLY_PATH);
-// Reads the form and removes it from disk at once, since it holds passwords.
+// The helper's way in: reads the form and removes it from disk at once, since it holds passwords. The path
+// is in a folder the unprivileged web server writes, so it is opened without following a link and only a
+// regular file with one name is read; the passwords are overwritten through that descriptor, and a path
+// that is anything else is neither read nor written, only unlinked if it can be.
 std::optional<Apply> takeApply(const std::string& path = APPLY_PATH);
 void writeApply(const Apply& a, const std::string& path = APPLY_PATH); // 0600: it holds passwords
 

@@ -1,6 +1,23 @@
 #!/bin/sh
 set -e
 MAIN_CONF=/etc/bluetooth/main.conf
+
+# Takes out each "# purrdometer:" marker line, and the line under it when that is the setting the package
+# wrote. Nothing else changes. A purge must finish, so when the file cannot be rewritten this says so and
+# leaves it as it is; the lines can then be removed by hand.
+remove_bluez_settings() {
+    rewritten=$(mktemp "$MAIN_CONF.XXXXXX") || return 1
+    if awk '
+        /^# purrdometer:/ { marked = 1; next }
+        marked && /^[ \t]*(ConnectionSupervisionTimeout|Privacy)[ \t]*=/ { marked = 0; next }
+        { marked = 0; print }
+    ' "$MAIN_CONF" > "$rewritten" && chmod --reference="$MAIN_CONF" "$rewritten" && mv "$rewritten" "$MAIN_CONF"; then
+        return 0
+    fi
+    rm -f "$rewritten"
+    return 1
+}
+
 case "$1" in
     remove)
         systemctl daemon-reload || true
@@ -8,9 +25,11 @@ case "$1" in
     purge)
         systemctl daemon-reload || true
         if [ -f "$MAIN_CONF" ] && grep -q '^# purrdometer:' "$MAIN_CONF"; then
-            # drop our marker line and the setting that follows it
-            sed -i '/^# purrdometer:/{N;d}' "$MAIN_CONF"
-            systemctl restart bluetooth.service 2>/dev/null || true
+            if remove_bluez_settings; then
+                systemctl restart bluetooth.service 2>/dev/null || true
+            else
+                echo "purrdometer: warning: could not remove its settings from $MAIN_CONF; remove the lines after '# purrdometer:' by hand" >&2
+            fi
         fi
         echo "purrdometer: kept rotation history in /var/lib/purrdometer (delete it by hand if unwanted)"
         ;;

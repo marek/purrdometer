@@ -25,6 +25,7 @@ struct State {
     std::string ssid{}, password{}; // the hotspot
     std::string network{};          // the WiFi being joined, or joined
     std::string message{};          // why a join failed, or the address the Pi got
+    std::string warning{};          // joined, but part of the form could not be applied
     std::time_t deadline = 0;       // when an unused hotspot stops; 0: not until setup is done
     std::time_t until = 0;          // how long "joined" is shown
 

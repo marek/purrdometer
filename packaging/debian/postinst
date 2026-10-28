@@ -2,32 +2,74 @@
 set -e
 
 MAIN_CONF=/etc/bluetooth/main.conf
+BLUEZ_STATE=/var/lib/bluetooth
 DOC="see /usr/share/doc/purrdometer/README.md"
 
-# Puts "key = value" into [section] of main.conf after a "# purrdometer:" marker,
-# once; replaces any other active setting of the key. Says whether it changed.
+# Makes [section] of main.conf hold the one active "key = value", right under a
+# "# purrdometer:" marker line, whatever it holds now: a changed value, a
+# missing one, a duplicate, a marker with no setting. Other settings of the key
+# in that section are replaced; the rest of the file is kept. Returns 0 when
+# the file changed, 1 when it already was so, 2 when it could not be written.
 bluez_setting() { # section key value why
     marker="# purrdometer: $4 ($DOC)"
-    grep -qF "$marker" "$MAIN_CONF" && return 1
-    sed -i "/^$2 *=/d" "$MAIN_CONF"
-    if grep -q "^\[$1\]" "$MAIN_CONF"; then
-        sed -i "s|^\[$1\]\$|[$1]\n$marker\n$2 = $3|" "$MAIN_CONF"
-    else
-        printf '\n[%s]\n%s\n%s = %s\n' "$1" "$marker" "$2" "$3" >> "$MAIN_CONF"
+    rewritten=$(mktemp "$MAIN_CONF.XXXXXX") || return 2
+    if awk -v sec="$1" -v key="$2" -v val="$3" -v marker="$marker" '
+        /^[ \t]*\[[^]]*\][ \t]*$/ {
+            cur = $0; gsub(/^[ \t]*\[|\][ \t]*$/, "", cur)
+            print
+            if (cur == sec && !done) { print marker; print key " = " val; done = 1 }
+            next
+        }
+        $0 == marker { next }
+        cur == sec && $0 ~ ("^[ \t]*" key "[ \t]*=") { next }
+        { print }
+        END { if (!done) { print ""; print "[" sec "]"; print marker; print key " = " val } }
+    ' "$MAIN_CONF" > "$rewritten" && chmod --reference="$MAIN_CONF" "$rewritten"; then
+        if cmp -s "$rewritten" "$MAIN_CONF"; then
+            rm -f "$rewritten"
+            return 1
+        fi
+        mv "$rewritten" "$MAIN_CONF" || { rm -f "$rewritten"; return 2; }
+        return 0
     fi
+    rm -f "$rewritten"
+    return 2
+}
+
+# True when [section] holds the key once, with the value.
+bluez_has() { # section key value
+    awk -v sec="$1" -v key="$2" -v val="$3" '
+        /^[ \t]*\[[^]]*\][ \t]*$/ { cur = $0; gsub(/^[ \t]*\[|\][ \t]*$/, "", cur); next }
+        cur == sec && $0 ~ ("^[ \t]*" key "[ \t]*=") {
+            n++; v = $0; sub(/^[^=]*=[ \t]*/, "", v); sub(/[ \t]*$/, "", v); if (v == val) ok++
+        }
+        END { exit !(n == 1 && ok == 1) }
+    ' "$MAIN_CONF"
+}
+
+# Sets one BlueZ setting and proves it took; stops the install when it did not.
+set_bluez() { # section key value why
+    rc=0
+    bluez_setting "$@" || rc=$?
+    if [ "$rc" -ge 2 ] || ! bluez_has "$1" "$2" "$3"; then
+        echo "purrdometer: cannot set $2 = $3 in [$1] of $MAIN_CONF" >&2
+        exit 1
+    fi
+    [ "$rc" -eq 0 ] && changed=1
+    return 0
 }
 
 configure_bluez() {
     [ -f "$MAIN_CONF" ] || return 0
     changed=
-    bluez_setting LE ConnectionSupervisionTimeout 600 "6 s LE supervision timeout" && changed=1
+    set_bluez LE ConnectionSupervisionTimeout 600 "6 s LE supervision timeout"
     # A random address for every connection: a sensor that kept a pairing with
     # this Pi's own address sends it nothing over an unencrypted link.
-    bluez_setting General Privacy device "connect with a random address" && changed=1
+    set_bluez General Privacy device "connect with a random address"
     [ -n "$changed" ] || return 0
     # BlueZ caches per-device connection parameters; they override the default.
     systemctl stop bluetooth.service 2>/dev/null || true
-    for info in /var/lib/bluetooth/*/*/info; do
+    for info in "$BLUEZ_STATE"/*/*/info; do
         [ -f "$info" ] || continue
         sed -i '/^\[ConnectionParameters\]/,/^\[/{/^\[ConnectionParameters\]/d;/^\[/!d}' "$info"
     done

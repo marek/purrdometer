@@ -28,6 +28,8 @@ struct Editable {
     int idleRefreshS = 60;
     std::optional<std::string> sensor; // a sensor's address; empty for the first one heard
     int wakeTurns = 2; // turns the sensor misses waking up (docs/intents/data/accounting.md)
+    bool rawLog = false; // exact sensor traffic for debugging (docs/intents/ble/raw-log.md)
+    int rawLogDays = 2;
 };
 
 struct Config {

@@ -5,11 +5,11 @@ screen, sensor and web settings can also be set in
 `/etc/purrdometer/purrdometer.conf`; what the gear saves goes to
 `/var/lib/purrdometer/settings.conf` and wins over that file. Your wheels are
 in `/var/lib/purrdometer/profiles.conf`, set from the gear. After editing the
-config file, check it and restart the screen and the dashboard:
+config file, check it and restart the programs that read it:
 
 ```sh
 purrdometer-display --check-config
-sudo systemctl restart purrdometer-display purrdometer-web
+sudo systemctl restart purrdometer-display purrdometer-web purrdometer-logger
 ```
 
 `--check-config` prints the wheel in use and its distance per rotation, and
@@ -79,6 +79,18 @@ full_refresh_every = 20    # fast updates between flashing, ghost-clearing ones
 active_refresh_s = 5       # seconds between updates while the wheel turns
 idle_refresh_s = 60        # seconds between checks while it does not
 ```
+
+## Sensor
+
+```ini
+[sensor]
+raw_log = off              # exact measurements and connection events for debugging
+raw_log_days = 2           # keep 1–14 local calendar days
+```
+
+The raw log costs nothing while off. When enabled, it writes one plain-text
+file per day under `/var/lib/purrdometer/sensor-log/`; the settings page links
+each retained day for download. Turning it off keeps files already written.
 
 ## Web
 

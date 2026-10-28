@@ -11,6 +11,43 @@
 
 namespace purr::logger {
 
+namespace {
+
+// BEGIN IMMEDIATE until commit(); rolled back if it goes out of scope first.
+class Transaction {
+public:
+    explicit Transaction(sqlite3* db) : db_(db) { run("BEGIN IMMEDIATE"); }
+    ~Transaction()
+    {
+        if (!done_)
+            sqlite3_exec(db_, "ROLLBACK", nullptr, nullptr, nullptr); // SQLite may have rolled back already
+    }
+    Transaction(const Transaction&) = delete;
+    Transaction& operator=(const Transaction&) = delete;
+
+    void commit()
+    {
+        run("COMMIT");
+        done_ = true;
+    }
+
+private:
+    void run(const char* sql)
+    {
+        char* err = nullptr;
+        if (sqlite3_exec(db_, sql, nullptr, nullptr, &err) != SQLITE_OK) {
+            std::string msg = err ? err : "?";
+            sqlite3_free(err);
+            throw std::runtime_error("sqlite: " + msg + " in: " + sql);
+        }
+    }
+
+    sqlite3* db_;
+    bool done_ = false;
+};
+
+} // namespace
+
 Store::Store(const std::string& path)
 {
     if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK)
@@ -53,15 +90,15 @@ void Store::migrate()
     exec(std::string("CREATE TABLE IF NOT EXISTS minutes ") + MINUTES);
     if (hasColumn("minutes", "wheel"))
         return;
-    // Versions 2 and 3 keyed minutes by the minute alone: every row is profile 1's.
+    // Versions 2 and 3 key minutes by the minute alone: every row becomes profile 1's.
     std::string estimated = hasColumn("minutes", "estimated") ? "estimated" : "0";
-    exec("BEGIN");
+    Transaction t(db_);
     exec(std::string("CREATE TABLE minutes_v4 ") + MINUTES);
     exec("INSERT INTO minutes_v4 (minute, wheel, revs, estimated) SELECT minute, 1, revs, " + estimated +
          " FROM minutes");
     exec("DROP TABLE minutes");
     exec("ALTER TABLE minutes_v4 RENAME TO minutes");
-    exec("COMMIT");
+    t.commit();
     log("database: rotations now kept per wheel profile, all history under profile 1");
 }
 
@@ -75,13 +112,13 @@ void Store::keepDays()
         return;
     // A new database, version 4, or another timezone: the days from the minutes, once.
     auto started = std::chrono::steady_clock::now();
-    exec("BEGIN");
+    Transaction t(db_);
     exec("DELETE FROM days");
     exec("INSERT INTO days SELECT date(minute * 60, 'unixepoch', 'localtime'), wheel, SUM(revs), SUM(estimated) "
          "FROM minutes GROUP BY 1, 2");
     Statement keep(db_, "INSERT OR REPLACE INTO meta VALUES ('days_timezone', ?1)");
     keep.text(1, zone).step();
-    exec("COMMIT");
+    t.commit();
     log("database: days grouped by ", zone, " in ",
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count(), " ms");
 }
@@ -129,10 +166,10 @@ void Store::sensorHeard(const std::string& address, const std::string& name, std
     s.text(1, address).text(2, name).optText(3, kind).optInt(4, rssi).dbl(5, nowSeconds()).step();
 }
 
-void Store::record(double ts, Sample cur, uint32_t delta, int estimated, int wheel)
+void Store::record(double ts, Sample cur, uint32_t delta, int estimated, int wheel, std::optional<int> rpm)
 {
     std::scoped_lock lock(mutex_);
-    exec("BEGIN");
+    Transaction t(db_);
     if (delta > 0 || estimated > 0) {
         Statement s(db_, "INSERT INTO minutes (minute, wheel, revs, estimated) VALUES (?1, ?2, ?3, ?4) "
                          "ON CONFLICT(minute, wheel) DO UPDATE SET "
@@ -151,13 +188,18 @@ void Store::record(double ts, Sample cur, uint32_t delta, int estimated, int whe
     setState("last_revs", std::to_string(cur.revs));
     setState("last_event_time", std::to_string(cur.eventTime));
     setState("last_wall", std::to_string(ts));
-    exec("COMMIT");
+    if (delta > 0)
+        setState("last_motion", std::to_string(ts));
+    if (rpm)
+        setState("rpm", std::to_string(*rpm));
+    t.commit();
 }
 
 void Store::forgetCounter()
 {
-    for (const char* key : {"last_counter", "last_revs", "last_event_time", "last_wall"})
-        clearState(key);
+    std::scoped_lock lock(mutex_);
+    // One statement: all four keys go or none does, never a counter without its time.
+    exec("DELETE FROM state WHERE key IN ('last_counter', 'last_revs', 'last_event_time', 'last_wall')");
 }
 
 } // namespace purr::logger

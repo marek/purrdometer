@@ -140,15 +140,17 @@ implementation is called complete.
 
 ## Tasks
 
-- [ ] Storage contract and tests: define failed-write behaviour in the accounting and storage intents; inject a failure after `BEGIN` and prove no delta is lost, duplicated or allowed to poison later writes
-- [ ] Storage implementation: make `Store::record()` transaction-safe and advance the revolution and missed-turn baselines only after the durable write succeeds
-- [ ] Root filesystem boundary: write and test a no-symlink, descriptor-relative SSH-key installation path with correct ownership, permissions, deduplication and failure reporting
-- [ ] BLE ownership: give the D-Bus callback and main loop one safe ownership mechanism for the active `SensorLink`; test removal during a sensor switch and run the logger test build under ThreadSanitizer where supported
-- [ ] Command runner: handle pipe and fork failures, complete stdin writes, enforce the deadline through process exit, kill the process group when required, drain output and test every timeout/failure shape
-- [ ] Setup state machine: distinguish command failure from an empty result, require hotspot and address success, propagate login/SSH failures, and prove a configured Pi stays on its network when profile discovery fails
-- [ ] Web writes: serialize settings and profile mutations across both workers, use collision-free temporary files, preserve atomic reader-visible replacement and test overlapping requests
-- [ ] Package lifecycle: make each BlueZ setting verify and repair its value, narrow or implement the purge guarantees, and test configure/upgrade/remove/purge/reinstall idempotence in an isolated package venue
-- [ ] Page compiler: make generated-file writes atomic and fail loudly on open, write, flush or rename errors; add a build-tool self-test for an unwritable destination
-- [ ] Test structure: split web test cases and fixtures into focused files while keeping one `--selftest` entry point; add sanitizer targets without weakening the Raspberry Pi GCC 14 build
-- [ ] Documentation: reconcile three/four-program wording, remotes, service counts and migration-comment guidance; remove duplicated rules where one intent or skill can own them
-- [ ] Full verification: run `make test`, the sanitizer builds, `make preview`, `make serve`, package lifecycle checks and the BLE/setup checks on whiskerwheel; record any physical checks that remain for the user
+- [x] Storage contract and tests: define failed-write behaviour in the accounting and storage intents; inject a failure after `BEGIN` and prove no delta is lost, duplicated or allowed to poison later writes
+- [x] Storage implementation: make `Store::record()` transaction-safe and advance the revolution and missed-turn baselines only after the durable write succeeds
+- [x] Root filesystem boundary: write and test a no-symlink, descriptor-relative SSH-key installation path with correct ownership, permissions, deduplication and failure reporting
+- [x] BLE ownership: give the D-Bus callback and main loop one safe ownership mechanism for the active `SensorLink`; test removal during a sensor switch and run the logger test build under ThreadSanitizer where supported
+- [x] Command runner: handle pipe and fork failures, complete stdin writes, enforce the deadline through process exit, kill the process group when required, drain output and test every timeout/failure shape
+- [x] Setup state machine: distinguish command failure from an empty result, require hotspot and address success, propagate login/SSH failures, and prove a configured Pi stays on its network when profile discovery fails
+- [x] Web writes: serialize settings and profile mutations across both workers, use collision-free temporary files, preserve atomic reader-visible replacement and test overlapping requests
+- [x] Package lifecycle: make each BlueZ setting verify and repair its value, narrow or implement the purge guarantees, and test configure/upgrade/remove/purge/reinstall idempotence in an isolated package venue
+- [x] Page compiler: make generated-file writes atomic and fail loudly on open, write, flush or rename errors; add a build-tool self-test for an unwritable destination
+- [x] Test structure: split web test cases and fixtures into focused files while keeping one `--selftest` entry point; add sanitizer targets without weakening the Raspberry Pi GCC 14 build
+- [x] Documentation: reconcile three/four-program wording, remotes, service counts and migration-comment guidance; remove duplicated rules where one intent or skill can own them
+- [x] Review follow-ups: the setup form and request boundary, the setup state machine's retry and failure messages, a sensor switch that cannot leave a stale count, the command runner's wait and drain, saves that read under the lock, authorized_keys dedupe by type and key, a flushed folder after each replaced file, a purge that warns and finishes
+- [x] Local verification: `make test`, `make test-address`, `make test-thread`, `make preview`, `make serve` and the built `.deb` through `packaging/test-package-lifecycle.sh` (install, upgrade, repair, remove, reinstall, purge, reinstall) in a trixie arm64 container, which runs no systemd: services are enabled, never started
+- [ ] On whiskerwheel: install the built `.deb` and run install, upgrade, remove, purge and reinstall with `bluetoothctl` and `journalctl` after each; switch the sensor on the settings page and wake it from sleep while `journalctl -u purrdometer-logger` and `sudo purrdometer-btdiag` run; start setup from the touch bar, join the home WiFi with a login password and an SSH key, and read the screen after; spin the wheel and watch rotations reach the screen (the user)

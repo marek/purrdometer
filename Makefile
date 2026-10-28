@@ -13,15 +13,17 @@ FONTDIR ?= /usr/share/fonts/truetype/dejavu
 CXXFLAGS += -DPURR_SYSCONFDIR='"$(SYSCONFDIR)"' -DPURR_LOCALSTATEDIR='"$(LOCALSTATEDIR)"' \
             -DPURR_RUNSTATEDIR='"$(RUNSTATEDIR)"' -DPURR_DATADIR='"$(DATADIR)"' -DPURR_FONTDIR='"$(FONTDIR)"'
 
+comma = ,
 BUILD = build
+BIN = bin
 PURR_TMP ?= $(CURDIR)/tmp
 export PURR_TMP
 
-LOGGER = bin/purrdometer-logger
-WEB = bin/purrdometer-web
-DISPLAY = bin/purrdometer-display
-SETUP = bin/purrdometer-setup
-PAGEC = bin/pagec
+LOGGER = $(BIN)/purrdometer-logger
+WEB = $(BIN)/purrdometer-web
+DISPLAY = $(BIN)/purrdometer-display
+SETUP = $(BIN)/purrdometer-setup
+PAGEC = $(BIN)/pagec
 
 LOGGER_PKGS = sdbus-c++ sqlite3
 # cpp-httplib is built with TLS, zlib and brotli support; its .pc file leaves their libraries out.
@@ -39,18 +41,18 @@ DISPLAY_SRCS = $(wildcard src/display/*.cpp src/display/screens/*.cpp) $(COMMON_
 DISPLAY_OBJS = $(patsubst %.cpp,$(BUILD)/%.o,$(DISPLAY_SRCS))
 LOGGER_SRCS = $(wildcard src/logger/*.cpp) $(COMMON_SRCS)
 LOGGER_OBJS = $(patsubst %.cpp,$(BUILD)/%.o,$(LOGGER_SRCS))
-SETUP_SRCS = $(wildcard src/setup/*.cpp) src/common/kv_file.cpp src/common/setup_state.cpp src/common/setup_form.cpp
+SETUP_SRCS = $(wildcard src/setup/*.cpp) src/common/atomic_file.cpp src/common/kv_file.cpp src/common/setup_state.cpp src/common/setup_form.cpp
 SETUP_OBJS = $(patsubst %.cpp,$(BUILD)/%.o,$(SETUP_SRCS))
 
 all: $(LOGGER) $(WEB) $(DISPLAY) $(SETUP)
 
 $(LOGGER): $(LOGGER_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) -o $@ $^ $(shell pkg-config --libs $(LOGGER_PKGS)) -pthread
+	$(CXX) $(LDFLAGS) -o $@ $^ $(shell pkg-config --libs $(LOGGER_PKGS)) -pthread
 
 $(PAGEC): src/tools/pagec.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
 
 $(BUILD)/gen/%.page.cpp $(BUILD)/gen/%.page.h: web/pages/%.page $(PAGEC)
 	@mkdir -p $(@D)
@@ -67,23 +69,36 @@ $(BUILD)/%.o: %.cpp | $(GEN_HDRS)
 
 $(WEB): $(WEB_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) -o $@ $^ $(shell pkg-config --libs $(WEB_PKGS)) -pthread
+	$(CXX) $(LDFLAGS) -o $@ $^ $(shell pkg-config --libs $(WEB_PKGS)) -pthread
 
 $(SETUP): $(SETUP_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(DISPLAY): $(DISPLAY_OBJS)
 	@mkdir -p $(@D)
-	$(CXX) -o $@ $^ $(shell pkg-config --libs $(DISPLAY_PKGS))
+	$(CXX) $(LDFLAGS) -o $@ $^ $(shell pkg-config --libs $(DISPLAY_PKGS))
 
 test: all
 	@mkdir -p $(PURR_TMP)
 	tools/check-includes.sh
+	packaging/test-maintainer-scripts.sh
+	$(PAGEC) --selftest
 	$(LOGGER) --selftest
 	$(WEB) --selftest --wheels data/wheels.conf
 	$(DISPLAY) --selftest --wheels data/wheels.conf
 	$(SETUP) --selftest
+
+# The same self-tests under a sanitizer, built apart in build/<name>/ and bin/<name>/:
+# address (with undefined behaviour) and thread. The Pi's default build is untouched.
+# GCC 14 reports <regex> as maybe-uninitialized once instrumented, so that one warning is not an error here.
+define sanitized
+test-$(1):
+	CXXFLAGS="-O1 -g -fno-omit-frame-pointer -Wno-maybe-uninitialized -fsanitize=$(2) $(3)" LDFLAGS="-fsanitize=$(2)" \
+	    $$(MAKE) test BUILD=$$(BUILD)/$(1) BIN=$$(BIN)/$(1)
+endef
+$(eval $(call sanitized,address,address$(comma)undefined,-fno-sanitize-recover=undefined))
+$(eval $(call sanitized,thread,thread,))
 
 # Render every e-paper screen from a fake-history database into preview/ (no hardware needed).
 preview: $(DISPLAY)
@@ -99,14 +114,17 @@ media: $(DISPLAY)
 serve: all
 	@mkdir -p $(PURR_TMP)
 	$(DISPLAY) --wheels data/wheels.conf --demo-db $(PURR_TMP)/demo.db
-	$(WEB) --db $(PURR_TMP)/demo.db --wheels data/wheels.conf --config /dev/null --port 8081 --legacy-port 0
+	$(WEB) --db $(PURR_TMP)/demo.db --wheels data/wheels.conf --config /dev/null \
+	    --overrides $(PURR_TMP)/demo-settings.conf --profiles $(PURR_TMP)/demo-profiles.conf --port 8081 --legacy-port 0
 
 deb:
 	packaging/build-deb.sh
 
 clean:
-	rm -rf $(BUILD) $(LOGGER) $(WEB) $(DISPLAY) $(SETUP) $(PAGEC)
+	rm -rf $(BUILD) $(BIN)
 
-.PHONY: all test preview media serve deb clean
+.DELETE_ON_ERROR:
+
+.PHONY: all test test-address test-thread preview media serve deb clean
 
 -include $(WEB_OBJS:.o=.d) $(DISPLAY_OBJS:.o=.d) $(LOGGER_OBJS:.o=.d) $(SETUP_OBJS:.o=.d)

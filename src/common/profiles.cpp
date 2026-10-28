@@ -1,11 +1,12 @@
 #include "common/profiles.h"
 
+#include "common/atomic_file.h"
 #include "common/ini.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <format>
-#include <fstream>
+#include <sstream>
 #include <stdexcept>
 
 namespace purr {
@@ -87,29 +88,19 @@ std::string writtenDiameter(double metres) { return std::format("{:.2f}cm", metr
 
 void writeProfiles(const Profiles& p, const std::string& path)
 {
-    std::string tmp = path + ".tmp";
-    {
-        std::ofstream out(tmp, std::ios::trunc);
-        if (!out)
-            throw std::runtime_error("cannot write " + tmp);
-        out << "# Your wheels, written by the purrdometer settings page. Rotations are stored\n"
-               "# under a profile's number: change a profile to correct its distance, add one\n"
-               "# for a new wheel. Numbers are never reused.\n\n"
-            << "[profiles]\ncurrent = " << p.current << "\nhighest = " << p.nextId() - 1 << "\n";
-        for (auto& prof : p.list) {
-            out << "\n[" << SECTION_PREFIX << prof.id << "]\nname = " << prof.name << "\n";
-            if (prof.preset)
-                out << "preset = " << *prof.preset << "\n";
-            if (prof.diameterM)
-                out << "diameter = " << writtenDiameter(*prof.diameterM) << "\n";
-        }
-        if (!out.flush())
-            throw std::runtime_error("cannot write " + tmp);
+    std::ostringstream out;
+    out << "# Your wheels, written by the purrdometer settings page. Rotations are stored\n"
+           "# under a profile's number: change a profile to correct its distance, add one\n"
+           "# for a new wheel. Numbers are never reused.\n\n"
+        << "[profiles]\ncurrent = " << p.current << "\nhighest = " << p.nextId() - 1 << "\n";
+    for (auto& prof : p.list) {
+        out << "\n[" << SECTION_PREFIX << prof.id << "]\nname = " << prof.name << "\n";
+        if (prof.preset)
+            out << "preset = " << *prof.preset << "\n";
+        if (prof.diameterM)
+            out << "diameter = " << writtenDiameter(*prof.diameterM) << "\n";
     }
-    if (std::rename(tmp.c_str(), path.c_str()) != 0) {
-        std::remove(tmp.c_str());
-        throw std::runtime_error("cannot replace " + path);
-    }
+    replaceFile(path, out.str());
 }
 
 Profiles seedProfiles(const std::optional<std::string>& model, const std::optional<std::string>& diameter,

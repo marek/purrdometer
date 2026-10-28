@@ -1,5 +1,6 @@
 #include "common/config.h"
 
+#include "common/atomic_file.h"
 #include "common/ini.h"
 
 #include <algorithm>
@@ -7,6 +8,7 @@
 #include <charconv>
 #include <cstdio>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -21,6 +23,7 @@ constexpr Range FULL_REFRESH_EVERY{1, 200};
 constexpr Range ACTIVE_REFRESH_S{1, 60};
 constexpr Range IDLE_REFRESH_S{10, 3600};
 constexpr Range MISSED_TURNS{0, 10};
+constexpr Range RAW_LOG_DAYS{1, 14};
 
 std::string lower(const std::string& s) { return toLower(s); }
 
@@ -80,6 +83,13 @@ void apply(const Ini& ini, Editable& e, std::vector<std::string>& errors)
         }
     };
     number("wake_turns", e.wakeTurns, MISSED_TURNS, "sensor");
+    number("raw_log_days", e.rawLogDays, RAW_LOG_DAYS, "sensor");
+    if (auto v = ini.get("sensor", "raw_log")) {
+        if (auto b = parseBool(*v))
+            e.rawLog = *b;
+        else
+            errors.push_back("[sensor] raw_log must be on or off");
+    }
     number("full_refresh_every", e.fullRefreshEvery, FULL_REFRESH_EVERY);
     number("active_refresh_s", e.activeRefreshS, ACTIVE_REFRESH_S);
     number("idle_refresh_s", e.idleRefreshS, IDLE_REFRESH_S);
@@ -152,6 +162,8 @@ std::vector<std::string> validate(const Editable& e)
         problems.push_back(rangeError("idle_refresh_s", IDLE_REFRESH_S));
     if (!in(e.wakeTurns, MISSED_TURNS))
         problems.push_back(rangeError("wake_turns", MISSED_TURNS, "sensor"));
+    if (!in(e.rawLogDays, RAW_LOG_DAYS))
+        problems.push_back(rangeError("raw_log_days", RAW_LOG_DAYS, "sensor"));
     if (e.sensor && !normalizeAddress(*e.sensor))
         problems.push_back("the sensor is not a Bluetooth address: " + *e.sensor);
     return problems;
@@ -229,31 +241,22 @@ std::map<int, double> circumferences(const Config& c)
 
 void saveOverrides(const Editable& e, const std::string& path)
 {
-    std::string tmp = path + ".tmp";
-    {
-        std::ofstream out(tmp);
-        if (!out)
-            throw std::runtime_error("cannot write " + tmp);
-        out << "# Written by the purrdometer web UI. Overrides /etc/purrdometer/purrdometer.conf;\n"
-               "# delete this file (or use Reset in the UI) to go back to it.\n\n"
-               "[wheel]\n"
-            << "units = " << e.units << "\n\n"
-            << "[display]\n"
-            << "rotate180 = " << (e.rotate180 ? "true" : "false") << "\n"
-            << "full_refresh_every = " << e.fullRefreshEvery << "\n"
-            << "active_refresh_s = " << e.activeRefreshS << "\n"
-            << "idle_refresh_s = " << e.idleRefreshS << "\n\n"
-            << "[sensor]\n"
-            << "address = " << e.sensor.value_or("") << "\n"
-            << "wake_turns = " << e.wakeTurns << "\n";
-        out.flush();
-        if (!out)
-            throw std::runtime_error("cannot write " + tmp);
-    }
-    if (std::rename(tmp.c_str(), path.c_str()) != 0) {
-        std::remove(tmp.c_str());
-        throw std::runtime_error("cannot replace " + path);
-    }
+    std::ostringstream out;
+    out << "# Written by the purrdometer web UI. Overrides /etc/purrdometer/purrdometer.conf;\n"
+           "# delete this file (or use Reset in the UI) to go back to it.\n\n"
+           "[wheel]\n"
+        << "units = " << e.units << "\n\n"
+        << "[display]\n"
+        << "rotate180 = " << (e.rotate180 ? "true" : "false") << "\n"
+        << "full_refresh_every = " << e.fullRefreshEvery << "\n"
+        << "active_refresh_s = " << e.activeRefreshS << "\n"
+        << "idle_refresh_s = " << e.idleRefreshS << "\n\n"
+        << "[sensor]\n"
+        << "address = " << e.sensor.value_or("") << "\n"
+        << "wake_turns = " << e.wakeTurns << "\n"
+        << "raw_log = " << (e.rawLog ? "on" : "off") << "\n"
+        << "raw_log_days = " << e.rawLogDays << "\n";
+    replaceFile(path, out.str());
 }
 
 } // namespace purr

@@ -39,6 +39,7 @@ struct SettingsView {
     std::vector<SeenSensor> sensors;   // heard by the logger, newest first
     Live live;                         // the sensor in use, its kind and battery
     bool scanning = false;             // a scan the page asked for is still running
+    std::vector<std::string> sensorLogDays; // newest first, for download
     std::time_t now = 0;
 };
 

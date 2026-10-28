@@ -1,6 +1,6 @@
 ---
 name: developer
-description: Implements a change to purrdometer against the nearest intent doc, touching all three strands (intent, tests, implementation). Use for building a feature, fixing a bug, restructuring code, or working a plan item that changes C++ logger source, Python display source, the Makefile or packaging.
+description: Implements a change to purrdometer against the nearest intent doc, touching all three strands (intent, tests, implementation). Use for building a feature, fixing a bug, restructuring code, or working a plan item that changes C++ source, the Makefile or packaging.
 ---
 
 # Developer

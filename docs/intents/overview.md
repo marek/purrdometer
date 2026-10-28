@@ -19,7 +19,7 @@ Fast Cat and Star Cat wheels, and any wheel works once its diameter is known.
 | Touch bar | Four tabs along the bottom edge of the screen choose the screen |
 | Web | The same history in a browser at `http://whiskerwheel/`, with a JSON API |
 | Reliability | The sensor reconnects by itself after a drop or a sleep; the link tolerates seconds of radio loss |
-| Install | One `.deb` installs all three services and every system setting they need |
+| Install | One `.deb` installs all four services and every system setting they need |
 
 ## Principles
 

@@ -1,6 +1,6 @@
 ---
 name: verification
-description: How to actually verify a change in purrdometer before calling it done - make test (the three programs' --selftest), make preview (look at the PNGs), and on-device testing on the Pi (whiskerwheel) via journalctl and btmon - plus the hygiene every test run must keep (nothing left running, nothing left in the tree) and the traps of BLE and display testing. Use before reporting any fix or feature as complete, before ticking a plan box, and before and after any on-device test.
+description: How to actually verify a change in purrdometer before calling it done - make test (the four programs' --selftest, pagec and the maintainer scripts), make preview (look at the PNGs), and on-device testing on the Pi (whiskerwheel) via journalctl and btmon - plus the hygiene every test run must keep (nothing left running, nothing left in the tree) and the traps of BLE and display testing. Use before reporting any fix or feature as complete, before ticking a plan box, and before and after any on-device test.
 ---
 
 # Verification
@@ -31,7 +31,8 @@ on-device screen for display changes.
 
 | Venue | Command | Proves |
 |---|---|---|
-| All tests | `make test` | Runs `--selftest` of `bin/purrdometer-logger`, `bin/purrdometer-web` and `bin/purrdometer-display` |
+| All tests | `make test` | Runs `--selftest` of `bin/purrdometer-logger`, `bin/purrdometer-web`, `bin/purrdometer-display` and `bin/purrdometer-setup`, `bin/pagec --selftest`, and `packaging/test-maintainer-scripts.sh` |
+| Sanitizers | `make test-address`, `make test-thread` | The same tests built with AddressSanitizer and UndefinedBehaviorSanitizer, or ThreadSanitizer, in `build/<name>/` |
 | Display preview | `make preview` | Renders all four screens (NOW, 30 DAYS, CALENDAR, ALL TIME) to `preview/*.png` from a fake DB; open the PNGs and look |
 | Web page | `make serve`, open `http://whiskerwheel:8081/` or screenshot it headless | The dashboard over a fake DB; look at it |
 | On device — logs | `ssh marek@whiskerwheel 'journalctl -u purrdometer-logger -u purrdometer-display -n 100'` | What the running services report; the first place to check after a .deb install |

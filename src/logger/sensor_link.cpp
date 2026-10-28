@@ -12,21 +12,25 @@ SensorLink::SensorLink(sdbus::IConnection& bus, std::string mac, std::function<v
 {
     device_ = sdbus::createProxy(bus_, SERVICE, sdbus::ObjectPath{path_});
     device_->uponSignal("PropertiesChanged").onInterface(PROPS_IFACE).call(
-        [this](const std::string& iface, const Props& changed, const std::vector<std::string>&) {
+        [this, guard = guard_](const std::string& iface, const Props& changed, const std::vector<std::string>&) {
             if (iface != DEVICE_IFACE)
                 return;
-            if (auto it = changed.find("Connected"); it != changed.end()) {
-                bool c = it->second.get<bool>();
-                log(c ? "connected" : "disconnected");
-                setConnected(c);
-            }
-            if (auto it = changed.find("ServicesResolved"); it != changed.end()) {
-                servicesResolved_ = it->second.get<bool>();
-                log("services resolved: ", servicesResolved_ ? "yes" : "no");
-            }
+            guard->run([&] {
+                if (auto it = changed.find("Connected"); it != changed.end()) {
+                    bool c = it->second.get<bool>();
+                    log(c ? "connected" : "disconnected");
+                    setConnected(c);
+                }
+                if (auto it = changed.find("ServicesResolved"); it != changed.end()) {
+                    servicesResolved_ = it->second.get<bool>();
+                    log("services resolved: ", servicesResolved_ ? "yes" : "no");
+                }
+            });
         });
     log("target sensor ", mac_);
 }
+
+SensorLink::~SensorLink() { guard_->close(); }
 
 void SensorLink::setConnected(bool c)
 {
@@ -83,11 +87,12 @@ bool SensorLink::startNotify(const ManagedObjects& objs, std::function<void(cons
     }
     characteristic_ = sdbus::createProxy(bus_, SERVICE, sdbus::ObjectPath{charPath});
     characteristic_->uponSignal("PropertiesChanged").onInterface(PROPS_IFACE).call(
-        [onValue = std::move(onValue)](const std::string& iface, const Props& changed, const std::vector<std::string>&) {
+        [onValue = std::move(onValue), guard = guard_](const std::string& iface, const Props& changed,
+                                                        const std::vector<std::string>&) {
             if (iface != CHAR_IFACE)
                 return;
             if (auto it = changed.find("Value"); it != changed.end())
-                onValue(it->second.get<std::vector<uint8_t>>());
+                guard->run([&] { onValue(it->second.get<std::vector<uint8_t>>()); });
         });
     // The notification session belongs to this D-Bus connection and lives as long as it does.
     characteristic_->callMethod("StartNotify").onInterface(CHAR_IFACE);

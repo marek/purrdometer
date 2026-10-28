@@ -10,6 +10,7 @@ namespace purr::logger {
 
 struct Paths {
     std::string db = DB_PATH;
+    std::string sensorLogDir = SENSOR_LOG_DIR;
     std::string sensorFile = SENSOR_PATH; // the first sensor heard, kept
     std::string config = CONFIG_PATH;
     std::string overrides = OVERRIDES_PATH;

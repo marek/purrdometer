@@ -4,8 +4,9 @@
 // Link-layer robustness (long LE supervision timeout, a random address, WiFi
 // power-save off) is configured system-wide by the Debian package, not here.
 //
-// Usage: purrdometer-logger [--db PATH] [--sensor-file PATH] [--config PATH]
-//                           [--overrides PATH] [--scan-request PATH] [--selftest]
+// Usage: purrdometer-logger [--db PATH] [--sensor-log-dir PATH] [--sensor-file PATH]
+//                           [--config PATH] [--overrides PATH] [--profiles PATH]
+//                           [--scan-request PATH] [--selftest]
 
 #include "logger/log.h"
 #include "logger/monitor.h"

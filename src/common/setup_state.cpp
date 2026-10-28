@@ -1,5 +1,6 @@
 #include "common/setup_state.h"
 
+#include "common/atomic_file.h"
 #include "common/kv_file.h"
 
 #include <cstdio>
@@ -56,6 +57,7 @@ State readState(const std::string& path)
     s.password = get(kv, "password");
     s.network = get(kv, "network");
     s.message = get(kv, "message");
+    s.warning = get(kv, "warning");
     s.deadline = getTime(kv, "deadline");
     s.until = getTime(kv, "until");
     return s;
@@ -68,6 +70,7 @@ void writeState(const State& s, const std::string& path)
                           {"password", s.password},
                           {"network", s.network},
                           {"message", s.message},
+                          {"warning", s.warning},
                           {"deadline", std::to_string(s.deadline)},
                           {"until", std::to_string(s.until)}});
 }
@@ -95,13 +98,10 @@ std::vector<Network> readNetworks(const std::string& path)
 
 void writeNetworks(const std::vector<Network>& networks, const std::string& path)
 {
-    std::string tmp = path + ".tmp";
-    {
-        std::ofstream out(tmp, std::ios::trunc);
-        for (auto& n : networks)
-            out << n.signal << '\t' << percentEncode(n.security) << '\t' << percentEncode(n.ssid) << '\n';
-    }
-    std::rename(tmp.c_str(), path.c_str());
+    std::string text;
+    for (auto& n : networks)
+        text += std::to_string(n.signal) + '\t' + percentEncode(n.security) + '\t' + percentEncode(n.ssid) + '\n';
+    replaceFile(path, text);
 }
 
 } // namespace purr::setup

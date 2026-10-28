@@ -12,7 +12,7 @@ skills and roles beside it.
 
 | Folder | What |
 |---|---|
-| `src/` | A folder per program, each with `main.cpp` and `selftest.cpp`: `logger/` (measurement parsing, accounting, the SQLite store, the BlueZ adapter and sensor link, the monitor loop); `display/` (pins, panel and touch drivers, canvas and fonts, `screens/` one file each, taps and holds, the refresh policy, the boot window, the app loop); `web/` (the server, a module per group of routes, the save guard); `setup/` (commands, NetworkManager, the login account, setup mode's state machine). `common/` holds what several use (config, wheels, the database reader, formats, calendar days, file watching, setup mode's shared files); `tools/pagec.cpp` is the page compiler. [workspace/source-layout.md](../intents/workspace/source-layout.md) has the rules |
+| `src/` | A folder per program, each with `main.cpp` and a `selftest.cpp` that runs its `selftest_<area>.cpp` cases: `logger/` (measurement parsing, accounting, the SQLite store, the BlueZ adapter and sensor link, the monitor loop); `display/` (pins, panel and touch drivers, canvas and fonts, `screens/` one file each, taps and holds, the refresh policy, the boot window, the app loop); `web/` (the server, a module per group of routes, the save guard); `setup/` (commands, NetworkManager, the login account, setup mode's state machine). `common/` holds what several use (config, wheels, the database reader, formats, calendar days, file watching, setup mode's shared files); `tools/pagec.cpp` is the page compiler. [workspace/source-layout.md](../intents/workspace/source-layout.md) has the rules |
 | `web/pages/` | The dashboard's pages as `.page`, compiled to C++ ([templates](../intents/web/pages.md)) |
 | `data/wheels.conf` | The wheel presets, read by both the screen and the dashboard |
 | `packaging/` | `build-deb.sh`, the Debian control file and maintainer scripts, the systemd units, the default config |
@@ -43,7 +43,9 @@ way, but slowly:
 
 ```sh
 make            # the logger, the template compiler, the dashboard (no -j: the Zero swaps)
-make test       # the four programs' self-tests
+make test       # the four programs' self-tests, pagec's and the maintainer scripts
+make test-address   # the same under AddressSanitizer and UBSan (build/address/)
+make test-thread    # the same under ThreadSanitizer (build/thread/)
 make preview    # every screen as a PNG in preview/, from made-up history
 make serve      # the dashboard on :8081 over made-up history
 make deb        # the package, in dist/ (runs make test first)

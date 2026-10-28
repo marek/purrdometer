@@ -18,13 +18,20 @@ public:
     }
 
     // Turns to add for a measurement that counted `delta` turns; restarted:
-    // the sensor's count went back since the last measurement.
-    int estimate(unsigned delta, bool restarted)
+    // the sensor's count went back since the last measurement. Changes nothing:
+    // counted() does, once the measurement is stored.
+    int estimate(unsigned delta, bool restarted) const
     {
         if (delta == 0 || !awaitingFirstTurn_)
             return 0;
-        awaitingFirstTurn_ = false;
         return !needRestartProof_ || restarted ? wake_ : 0;
+    }
+
+    // A measurement that counted `delta` turns is stored: the wake is over.
+    void counted(unsigned delta)
+    {
+        if (delta > 0)
+            awaitingFirstTurn_ = false;
     }
 
 private:

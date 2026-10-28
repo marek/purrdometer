@@ -11,6 +11,7 @@ namespace purr {
 using KeyValues = std::map<std::string, std::string>;
 
 KeyValues readKeyValues(const std::string& path);
+KeyValues parseKeyValues(const std::string& text);
 void writeKeyValues(const std::string& path, const KeyValues& kv, unsigned mode = 0644); // throws std::runtime_error
 
 std::string percentEncode(const std::string& s);

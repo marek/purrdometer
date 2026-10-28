@@ -71,6 +71,26 @@ Errors back off exponentially up to 30 s. The notification session belongs to
 the logger's D-Bus connection: BlueZ ends it when that connection closes, so
 only a long-lived process can hold it.
 
+The logger follows one sensor's link at a time. BlueZ's word that the
+device's object is gone arrives on the D-Bus thread while the loop may be
+switching to another sensor; the word reaches the link followed at that
+moment or none, and a link is destroyed only after the last word to it has
+returned. The link's own signal handlers (the device's properties, the
+measurement) run under a guard that the link closes first when it is
+destroyed: one that is running finishes, a later one does nothing. What
+sdbus-c++ does when a proxy is destroyed while its signal is being delivered
+is the library's; the guard keeps the link's own state out of it, and the
+sensor-switch check on whiskerwheel covers the rest.
+
+## Proven by
+
+`purrdometer-logger --selftest`: a removal during sensor switches, repeated
+from two threads, never reaches a link that is destroyed or being destroyed;
+a closed handler guard has none running and admits no later one;
+`make test-thread` runs it under ThreadSanitizer. On whiskerwheel:
+`journalctl -u purrdometer-logger` through a sensor change on the settings
+page and a wake from sleep, and `sudo purrdometer-btdiag` for the link.
+
 ## Out of scope
 
 More than one sensor at a time, and a sensor shared with another central

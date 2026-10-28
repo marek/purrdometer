@@ -18,6 +18,7 @@ tags are the common ones of JSP, ASP and EJS.
 | Source | `web/pages/<name>.page` |
 | Compiler | `pagec` (`src/tools/pagec.cpp`), built first by `make` |
 | Output | `build/gen/<name>.page.cpp` and `.page.h`, never committed |
+| Writing | `pagec` writes both outputs beside their places and renames them in; a file that cannot be written or replaced is reported and the exit status is not zero, never a stale pair for the build to use. Output that did not change keeps its timestamp. `pagec --selftest`, run by `make test`, proves it, an unwritable destination included |
 | Function | `void purr::pages::<name>(std::string& out, <params>)`, appending the page to `out` |
 | Data | A page receives a view struct built in C++ (for the dashboard, `purr::Dashboard` from `buildDashboard`); arithmetic for drawing stays in the page, deciding what to show stays in C++ |
 

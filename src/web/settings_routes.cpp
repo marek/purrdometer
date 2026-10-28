@@ -4,6 +4,8 @@
 #include "common/file_watch.h"
 #include "common/stats.h"
 #include "web/save_guard.h"
+#include "web/save_lock.h"
+#include "web/sensor_logs.h"
 #include "web/wheel_routes.h"
 #include "web/settings_form.h"
 #include "web/settings_view.h"
@@ -34,6 +36,7 @@ void send(const Site& site, const httplib::Request& req, httplib::Response& res,
     view.sensors = loadSensors(site.paths.db);
     Stats st = loadStats(site.paths.db, cal::localDay(view.now), circumferences(cfg));
     view.live = st.live;
+    view.sensorLogDays = sensorLogDays(site.paths.sensorLogDir);
     for (auto& p : cfg.profiles.list) {
         const Wheel& w = cfg.wheels.at(p.id);
         auto revs = st.profileRevs.find(p.id);
@@ -70,6 +73,17 @@ void addSettingsRoutes(const Site& site, httplib::Server& server)
         view.wheelError = req.get_param_value("wheel_error");
         send(site, req, res, std::move(view), cfg);
     });
+    server.Get("/settings/sensor-log", [&](const httplib::Request& req, httplib::Response& res) {
+        std::string day = req.get_param_value("day");
+        auto contents = readSensorLog(site.paths.sensorLogDir, day);
+        if (!contents) {
+            res.status = 404;
+            return res.set_content("sensor log not found\n", "text/plain");
+        }
+        res.set_header("Cache-Control", "no-store");
+        res.set_header("Content-Disposition", "attachment; filename=\"" + day + ".log\"");
+        res.set_content(*contents, "text/plain; charset=utf-8");
+    });
     server.Post("/settings", [&](const httplib::Request& req, httplib::Response& res) {
         Config cfg = site.config();
         SettingsView view;
@@ -81,6 +95,9 @@ void addSettingsRoutes(const Site& site, httplib::Server& server)
             res.status = 400;
             return send(site, req, res, std::move(view), cfg);
         }
+        SaveLock saving;
+        // What the form leaves out stays as the last save left it, not as it was before this request waited.
+        view.values = editableFromForm(req, site.config().editable);
         ensureProfiles(site); // the wheel leaves settings.conf: profile 1 keeps it
         saveOverrides(view.values, site.paths.overrides);
         std::println("settings saved from {}", req.remote_addr);
@@ -100,6 +117,7 @@ void addSettingsRoutes(const Site& site, httplib::Server& server)
         SettingsView view = current(cfg);
         if (!authorised(req, res, cfg, view.problems))
             return send(site, req, res, std::move(view), cfg);
+        SaveLock saving;
         std::remove(site.paths.overrides.c_str());
         std::println("settings reset from {}", req.remote_addr);
         res.set_redirect("/settings?reset=1", 303);

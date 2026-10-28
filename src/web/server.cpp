@@ -3,6 +3,7 @@
 #include "web/dashboard_routes.h"
 #include "web/captive.h"
 #include "web/legacy.h"
+#include "web/save_lock.h"
 #include "web/setup_routes.h"
 #include "web/settings_routes.h"
 #include "web/wheel_routes.h"
@@ -42,7 +43,10 @@ int serve(const Site& site)
     Config cfg = site.config();
     std::string bind = site.bind.value_or(cfg.bind);
     int port = site.port.value_or(cfg.port);
-    ensureProfiles(site);
+    {
+        SaveLock saving;
+        ensureProfiles(site);
+    }
     httplib::Server server;
     addRoutes(site, server);
     std::println("serving on http://{}:{}/ from {} ({}); settings: {}", bind, port, site.paths.db,

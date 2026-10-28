@@ -1,7 +1,10 @@
 #include "setup/command.h"
 
-#include <chrono>
+#include <algorithm>
+#include <cerrno>
 #include <csignal>
+#include <cstring>
+#include <fcntl.h>
 #include <poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -10,6 +13,10 @@ namespace purr::setup {
 
 namespace {
 
+using Clock = std::chrono::steady_clock;
+constexpr int POLL_SLICE_MS = 50;
+constexpr size_t MAX_PASS_BYTES = 1 << 16;
+
 std::string trimmed(std::string s)
 {
     while (!s.empty() && (s.back() == '\n' || s.back() == ' '))
@@ -17,71 +24,193 @@ std::string trimmed(std::string s)
     return s;
 }
 
-[[noreturn]] void execChild(const std::vector<std::string>& argv, int in, int out, int err)
+// A pipe both of whose ends close on exec.
+struct Pipe {
+    int r = -1, w = -1;
+    bool open()
+    {
+        int fds[2];
+        if (pipe2(fds, O_CLOEXEC) != 0)
+            return false;
+        r = fds[0];
+        w = fds[1];
+        return true;
+    }
+    void closeBoth()
+    {
+        for (int* fd : {&r, &w}) {
+            if (*fd >= 0)
+                close(*fd);
+            *fd = -1;
+        }
+    }
+};
+
+void closeFd(int& fd)
 {
-    dup2(in, 0);
-    dup2(out, 1);
-    dup2(err, 2);
-    std::vector<char*> args;
-    for (auto& a : argv)
-        args.push_back(const_cast<char*>(a.c_str()));
-    args.push_back(nullptr);
-    execvp(args[0], args.data());
-    _exit(127);
+    if (fd >= 0)
+        close(fd);
+    fd = -1;
+}
+
+CommandResult unrun(const std::string& why)
+{
+    CommandResult r;
+    r.err = why;
+    return r;
+}
+
+enum class Wait { Running, Exited, Failed };
+
+// Whether the child has exited, without waiting. Failed: waitpid could not say (the child is not ours
+// to reap, as when SIGCHLD is ignored), which is not an exit status of any kind.
+Wait reaped(pid_t pid, int& status)
+{
+    pid_t got;
+    do
+        got = waitpid(pid, &status, WNOHANG);
+    while (got < 0 && errno == EINTR);
+    if (got == pid)
+        return Wait::Exited;
+    return got < 0 ? Wait::Failed : Wait::Running;
 }
 
 } // namespace
 
-std::string CommandResult::why() const { return trimmed(err.empty() ? out : err); }
-
-CommandResult runCommand(const std::vector<std::string>& argv, const std::string& input, int timeoutS)
+std::string CommandResult::why() const
 {
-    int in[2], out[2], err[2];
-    if (pipe(in) || pipe(out) || pipe(err))
-        return {};
-    pid_t pid = fork();
-    if (pid == 0) {
-        close(in[1]);
-        close(out[0]);
-        close(err[0]);
-        execChild(argv, in[0], out[1], err[1]);
+    std::string text = trimmed(err.empty() ? out : err);
+    return text.empty() && timedOut ? "timed out" : text;
+}
+
+CommandResult runCommand(const std::vector<std::string>& argv, const std::string& input,
+                         std::chrono::milliseconds timeout)
+{
+    if (argv.empty())
+        return unrun("no command to run");
+    std::signal(SIGPIPE, SIG_IGN); // a program that stops reading its input must not end ours
+
+    std::vector<char*> args;
+    for (auto& a : argv)
+        args.push_back(const_cast<char*>(a.c_str()));
+    args.push_back(nullptr);
+
+    Pipe in, out, err, exec;
+    if (!in.open() || !out.open() || !err.open() || !exec.open()) {
+        std::string why = std::string("cannot make pipes: ") + std::strerror(errno);
+        for (Pipe* p : {&in, &out, &err, &exec})
+            p->closeBoth();
+        return unrun(why);
     }
-    close(in[0]);
-    close(out[1]);
-    close(err[1]);
-    // A short write leaves the program to complain about its input, which it reports in err.
-    [[maybe_unused]] ssize_t fed = input.empty() ? 0 : ::write(in[1], input.data(), input.size());
-    close(in[1]);
+    pid_t pid = fork();
+    if (pid < 0) {
+        std::string why = std::string("cannot start ") + argv[0] + ": " + std::strerror(errno);
+        for (Pipe* p : {&in, &out, &err, &exec})
+            p->closeBoth();
+        return unrun(why);
+    }
+    if (pid == 0) {
+        std::signal(SIGPIPE, SIG_DFL); // an ignored signal stays ignored across exec
+        setpgid(0, 0); // its own group, so a deadline can end it and whatever it started
+        dup2(in.r, 0);
+        dup2(out.w, 1);
+        dup2(err.w, 2);
+        execvp(args[0], args.data());
+        int why = errno;
+        [[maybe_unused]] ssize_t told = ::write(exec.w, &why, sizeof why);
+        _exit(127);
+    }
+    setpgid(pid, pid); // also from this side: whichever runs first wins the race to kill it
+    closeFd(in.r);
+    closeFd(out.w);
+    closeFd(err.w);
+    closeFd(exec.w);
+
+    for (int fd : {in.w, out.r, err.r, exec.r})
+        fcntl(fd, F_SETFL, O_NONBLOCK);
 
     CommandResult r;
-    pollfd fds[2] = {{out[0], POLLIN, 0}, {err[0], POLLIN, 0}};
-    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(timeoutS);
-    int open = 2;
+    auto deadline = Clock::now() + timeout;
+    size_t fed = 0;
+    if (input.empty())
+        closeFd(in.w);
+    int status = 0, execErrno = 0;
+    Wait waited = Wait::Running;
     char buf[4096];
-    while (open > 0 && std::chrono::steady_clock::now() < deadline) {
-        if (::poll(fds, 2, 500) <= 0)
-            continue;
+    // What a pass reads of each pipe is bounded, so a program that never stops writing cannot keep the
+    // loop from its deadline; output past the cap is read and dropped.
+    auto readOut = [&] {
         for (int i = 0; i < 2; ++i) {
-            if (fds[i].fd < 0 || !(fds[i].revents & (POLLIN | POLLHUP)))
-                continue;
-            ssize_t n = ::read(fds[i].fd, buf, sizeof buf);
-            if (n > 0) {
-                (i ? r.err : r.out).append(buf, size_t(n));
-                continue;
+            int& fd = i ? err.r : out.r;
+            for (size_t passBytes = 0; fd >= 0 && passBytes < MAX_PASS_BYTES;) {
+                ssize_t n = ::read(fd, buf, sizeof buf);
+                if (n > 0) {
+                    std::string& to = i ? r.err : r.out;
+                    to.append(buf, std::min(size_t(n), MAX_OUTPUT_BYTES - std::min(to.size(), MAX_OUTPUT_BYTES)));
+                    passBytes += size_t(n);
+                } else if (n == 0 || (errno != EINTR && errno != EAGAIN)) {
+                    closeFd(fd);
+                } else if (errno == EAGAIN) {
+                    break;
+                }
             }
-            close(fds[i].fd);
-            fds[i].fd = -1;
-            --open;
+        }
+    };
+    // The child's exec closes this pipe; an errno on it means the program never ran.
+    auto readExec = [&] {
+        while (exec.r >= 0) {
+            ssize_t n = ::read(exec.r, &execErrno, sizeof execErrno);
+            if (n == ssize_t(sizeof execErrno)) {
+                closeFd(exec.r);
+                return true;
+            }
+            if (n < 0 && errno == EINTR)
+                continue;
+            if (n == 0 || errno != EAGAIN)
+                closeFd(exec.r);
+            break;
+        }
+        return execErrno != 0;
+    };
+    while (true) {
+        auto left = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now());
+        if (left.count() <= 0) {
+            // A program that finished as the deadline came has finished: only one still running is late.
+            waited = reaped(pid, status);
+            r.timedOut = waited == Wait::Running;
+            break;
+        }
+        pollfd fds[4] = {{out.r, POLLIN, 0}, {err.r, POLLIN, 0}, {in.w, POLLOUT, 0}, {exec.r, POLLIN, 0}};
+        ::poll(fds, 4, int(std::min<long long>(left.count(), POLL_SLICE_MS)));
+        readOut();
+        if (readExec())
+            break;
+        if (in.w >= 0) {
+            ssize_t n = ::write(in.w, input.data() + fed, input.size() - fed);
+            if (n > 0)
+                fed += size_t(n);
+            if (fed == input.size() || (n < 0 && errno != EAGAIN && errno != EINTR))
+                closeFd(in.w); // a program that stopped reading reports that itself
+        }
+        waited = reaped(pid, status);
+        if (waited != Wait::Running)
+            break;
+    }
+    if (r.timedOut || execErrno != 0) {
+        kill(-pid, SIGKILL);
+        kill(pid, SIGKILL);
+        while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {
         }
     }
-    for (auto& f : fds)
-        if (f.fd >= 0)
-            close(f.fd);
-    if (open > 0)
-        kill(pid, SIGKILL);
-    int status = 0;
-    waitpid(pid, &status, 0);
-    r.status = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+    readOut();
+    readExec();
+    for (int* fd : {&in.w, &out.r, &err.r, &exec.r})
+        closeFd(*fd);
+    if (execErrno != 0)
+        return unrun(std::string("cannot run ") + argv[0] + ": " + std::strerror(execErrno));
+    if (waited == Wait::Failed)
+        r.err += (r.err.empty() ? "" : "\n") + std::string("could not wait for ") + argv[0] + ": " + std::strerror(errno);
+    r.status = waited == Wait::Exited && WIFEXITED(status) && !r.timedOut ? WEXITSTATUS(status) : -1;
     return r;
 }
 

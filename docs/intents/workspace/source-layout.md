@@ -15,7 +15,7 @@ that starts doing a second job is split before the second job is finished.
 | Folder | Holds |
 |---|---|
 | `src/common/` | What more than one program uses: config and settings, wheels, calendar days, number formats, the database reader, key=value files, file watching, setup mode's shared files |
-| `src/logger/` | `purrdometer-logger`: revolution accounting, the SQLite writer, BlueZ discovery, the sensor's connection, the logger's loop |
+| `src/logger/` | `purrdometer-logger`: revolution accounting, the SQLite writer, the optional raw sensor log, BlueZ discovery, the sensor's connection, the logger's loop |
 | `src/display/` | `purrdometer-display`: the panel, touch and pins; the canvas and text; taps and holds; the refresh policy; the screens, one file each (`src/display/screens/`); the app's loop |
 | `src/web/` | `purrdometer-web`: the server and one module per group of routes (dashboard, API, settings, setup, the captive redirect, the 8080 redirect), access rules, the pages' view models |
 | `src/setup/` | `purrdometer-setup`: running commands, NetworkManager, the login account, the setup state machine |
@@ -23,7 +23,7 @@ that starts doing a second job is split before the second job is finished.
 | `web/pages/` | The `.page` files |
 
 A program's folder has a `main.cpp` and a `selftest.cpp`; nothing else in it
-has a `main`. Includes are written from `src/` (`#include "logger/store.h"`).
+has a `main`. `src/tools/` builds one tool, `pagec`, with its own `--selftest`. Includes are written from `src/` (`#include "logger/store.h"`).
 A program includes from `src/common/` and its own folder, never another
 program's; `tools/check-includes.sh`, run by `make test`, fails on one.
 
@@ -35,6 +35,6 @@ program's; `tools/check-includes.sh`, run by `make test`, fails on one.
 | A file | One class, or a close group of functions on one concept (one screen's drawing); a header per class |
 | Size | A file that passes about 300 lines, or a class with a second reason to change, is split along that reason |
 | Entry points | `main.cpp` parses arguments, builds the parts and runs them; no logic of its own |
-| Self-tests | In the program's `selftest.cpp`, through the parts' public members |
+| Self-tests | `selftest.cpp` is the program's one `--selftest` entry point: it runs the cases and reports. The cases are in `selftest_<area>.cpp` files of about 300 lines or fewer, one per area (accounting, the store, a route group, the command runner), declared in the program's `selftest.h`; they reach the parts through their public members. What the programs' self-tests share (`Check`, the counter of failures) is in `src/common/selftest.h` |
 | Values | Plain structs with public fields (`Sample`, `Wheel`, `State`) |
 | Dependencies | One way: `main` → the program's loop → its parts → `src/common/` |

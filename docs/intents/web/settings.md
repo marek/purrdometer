@@ -35,6 +35,8 @@ sees half a file.
 | `[display] active_refresh_s`, `idle_refresh_s`, `full_refresh_every` | Whole numbers in 1–60, 10–3600 and 1–200 |
 | `[sensor] address` | A sensor's address, or empty for automatic |
 | `[sensor] wake_turns` | A whole number 0–10: turns added when the sensor wakes, for the turns it misses ([../data/accounting.md](../data/accounting.md#turns-the-sensor-misses)) |
+| `[sensor] raw_log` | On/off: keep the exact sensor traffic for debugging ([../ble/raw-log.md](../ble/raw-log.md)) |
+| `[sensor] raw_log_days` | A whole number 1–14: raw log days to keep; default 2 |
 
 Every value is checked the same way the config file's are
 ([../data/wheels.md](../data/wheels.md)); a rejected save says why and writes
@@ -62,6 +64,7 @@ access rule; a rejected one says why and writes nothing.
 | Scan | Asks the logger for a 20-second scan by touching `/var/lib/purrdometer/scan-request`; the list fills in as it runs. Governed by the same access rule as saving |
 | Mounting | A picture and a few lines for the chosen sensor's kind: cadence or speed |
 | Missed turns | `wake_turns`, with what it is for |
+| Debug log | `raw_log`, its retention in days, and links to each retained day; only ordinary `YYYY-MM-DD.log` files can be downloaded |
 | Test | "Turn the wheel now": a live count of rotations and rpm since the test began, read from `/api/stats` every second, with no saving involved |
 
 **Never from the web:** `[web]` (`bind`, `port`, `settings_access`,
@@ -86,13 +89,22 @@ listens, could lock itself out or open itself up.
 | PIN | Compared in constant time; a wrong PIN waits a second before answering |
 | Viewing | The page is visible to anyone who can reach the dashboard; when saving is not allowed it says why and the buttons are disabled |
 
+## Saving
+
+| Subject | Rule |
+|---|---|
+| One writer at a time | The server answers two requests at once. Every change to the settings files (a save, a reset, a wheel added, edited, used or deleted, the setup page's wheel, profile 1 written from `[wheel]`) holds one lock from reading what is there to writing it back, so two overlapping changes both take effect and neither is written over the other. A client is authorised before the lock is taken: a wrong PIN's second does not hold other saves up |
+| Reading under the lock | What a form leaves out (`wake_turns`) is taken from the file once the lock is held, not from before the request waited for it, so it keeps what the save before it wrote |
+| Whole files | A file is written beside its place under a name of its own, flushed, renamed over it, and its folder flushed: a reader sees the old file or the new, the new one survives a power cut, and two writers never share a temporary file |
+| A write that fails | The request fails, the old file stays, nothing is left beside it. If only the folder could not be flushed, the new file is in place and the request fails all the same |
+
 ## Picking a change up
 
 | Program | When |
 |---|---|
 | `purrdometer-web` | On the next request: it reads both files on every request |
 | `purrdometer-display` | Before its next redraw (5 s while running, 60 s idle): it checks both files' modification times, and redraws in full on a change |
-| `purrdometer-logger` | Within a second for `[sensor] address` and `wake_turns`: it checks both files' modification times; nothing else it does depends on a setting |
+| `purrdometer-logger` | Within a second for `[sensor] address`, `wake_turns`, `raw_log` and `raw_log_days`: it checks both files' modification times; nothing else it does depends on a setting |
 
 ## Proven by
 
@@ -101,5 +113,6 @@ real server and client: the page and its token, a save without the token
 refused, a save written and used, an implausible diameter refused with its
 hint, reset (which keeps the profiles), and `off` refusing; profiles seeded
 from `[wheel]`, edited, added, switched and deleted, a profile with rotations
-not deleted. The display reads the settings through the
-same C++ code.
+not deleted; saves and wheel changes made at once from two clients, none lost
+and no two wheels given one number, and a file replaced by many writers read
+whole. The display reads the settings through the same C++ code.

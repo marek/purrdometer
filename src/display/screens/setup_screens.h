@@ -8,6 +8,7 @@
 
 #include <ctime>
 #include <optional>
+#include <string>
 
 namespace purr::display {
 
@@ -16,6 +17,8 @@ Canvas renderBoot(Fonts& fonts, std::optional<double> hold);
 
 // "Starting WiFi setup…", while the helper starts the hotspot.
 Canvas renderStarting(Fonts& fonts);
+// The same when the hotspot did not come up: why, and that setup tries again.
+Canvas renderStarting(Fonts& fonts, const std::string& why);
 
 // Setup mode, from the helper's state; webPort: the dashboard's, for the address shown once joined.
 Canvas renderSetup(Fonts& fonts, const setup::State& state, std::time_t now, int webPort = 80);

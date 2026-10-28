@@ -32,6 +32,7 @@ constexpr const char* WHEELS_PATH = PURR_DATADIR "/purrdometer/wheels.conf";
 constexpr const char* OVERRIDES_PATH = PURR_LOCALSTATEDIR "/lib/purrdometer/settings.conf"; // written by the web UI
 constexpr const char* PROFILES_PATH = PURR_LOCALSTATEDIR "/lib/purrdometer/profiles.conf";  // written by the web UI
 constexpr const char* DB_PATH = PURR_LOCALSTATEDIR "/lib/purrdometer/purrdometer.db";
+constexpr const char* SENSOR_LOG_DIR = PURR_LOCALSTATEDIR "/lib/purrdometer/sensor-log";
 constexpr const char* SENSOR_PATH = PURR_LOCALSTATEDIR "/lib/purrdometer/sensor";             // the first sensor heard
 constexpr const char* SCAN_REQUEST_PATH = PURR_LOCALSTATEDIR "/lib/purrdometer/scan-request"; // touched by the web UI
 constexpr const char* SETUP_REQUEST_PATH = PURR_LOCALSTATEDIR "/lib/purrdometer/setup-request";

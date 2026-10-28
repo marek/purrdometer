@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
-# The page's settings were settings.ini before 1.1; renamed before the new
-# programs are unpacked, so none of them starts without it. Once, and never
-# over a settings.conf that exists.
+# Accepts settings.ini, the page's settings file before settings.conf: renamed
+# before the new programs are unpacked, so none of them starts without it. Once,
+# and never over a settings.conf that exists.
 STATE=/var/lib/purrdometer
 if [ "$1" = upgrade ] && [ -f "$STATE/settings.ini" ] && [ ! -e "$STATE/settings.conf" ]; then
     mv "$STATE/settings.ini" "$STATE/settings.conf"

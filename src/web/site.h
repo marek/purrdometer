@@ -15,6 +15,7 @@ namespace purr::web {
 
 struct Paths {
     std::string db = DB_PATH;
+    std::string sensorLogDir = SENSOR_LOG_DIR;
     std::string config = CONFIG_PATH;
     std::string overrides = OVERRIDES_PATH;
     std::string profiles = PROFILES_PATH;

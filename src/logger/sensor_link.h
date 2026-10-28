@@ -4,6 +4,7 @@
 #pragma once
 
 #include "logger/bluez.h"
+#include "logger/callback_guard.h"
 
 #include <atomic>
 #include <functional>
@@ -17,6 +18,9 @@ class SensorLink {
 public:
     // onConnected: from either thread, whenever the connection state changes.
     SensorLink(sdbus::IConnection& bus, std::string mac, std::function<void(bool)> onConnected);
+    // Closes the guard its signal handlers run under before the proxies go: a delivery that is
+    // running finishes first, and one that comes after does nothing.
+    ~SensorLink();
 
     const std::string& mac() const { return mac_; }
     const std::string& path() const { return path_; }
@@ -40,6 +44,7 @@ private:
     sdbus::IConnection& bus_;
     std::string mac_, path_;
     std::function<void(bool)> onConnected_;
+    std::shared_ptr<CallbackGuard> guard_ = std::make_shared<CallbackGuard>(); // shared with the handlers
     std::unique_ptr<sdbus::IProxy> device_, characteristic_;
     std::atomic<bool> connected_{false}, servicesResolved_{false}, notifying_{false};
 };

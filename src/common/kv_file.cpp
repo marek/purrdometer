@@ -1,9 +1,13 @@
 #include "common/kv_file.h"
 
+#include "common/atomic_file.h"
+
 #include <cctype>
 #include <cstdio>
 #include <format>
 #include <fstream>
+#include <iterator>
+#include <sstream>
 #include <stdexcept>
 #include <sys/stat.h>
 
@@ -38,8 +42,14 @@ std::string percentDecode(const std::string& s)
 
 KeyValues readKeyValues(const std::string& path)
 {
-    KeyValues kv;
     std::ifstream in(path);
+    return parseKeyValues(std::string(std::istreambuf_iterator<char>(in), {}));
+}
+
+KeyValues parseKeyValues(const std::string& text)
+{
+    KeyValues kv;
+    std::istringstream in(text);
     std::string line;
     while (std::getline(in, line)) {
         auto eq = line.find('=');
@@ -51,21 +61,10 @@ KeyValues readKeyValues(const std::string& path)
 
 void writeKeyValues(const std::string& path, const KeyValues& kv, unsigned mode)
 {
-    std::string tmp = path + ".tmp";
-    {
-        std::ofstream out(tmp, std::ios::trunc);
-        if (!out)
-            throw std::runtime_error("cannot write " + tmp);
-        chmod(tmp.c_str(), mode);
-        for (auto& [k, v] : kv)
-            out << k << '=' << percentEncode(v) << '\n';
-        if (!out.flush())
-            throw std::runtime_error("cannot write " + tmp);
-    }
-    if (std::rename(tmp.c_str(), path.c_str()) != 0) {
-        std::remove(tmp.c_str());
-        throw std::runtime_error("cannot replace " + path);
-    }
+    std::string text;
+    for (auto& [k, v] : kv)
+        text += k + '=' + percentEncode(v) + '\n';
+    replaceFile(path, text, mode);
 }
 
 } // namespace purr

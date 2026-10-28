@@ -5,6 +5,7 @@
 #include "common/stats.h"
 #include "web/html.h"
 #include "web/save_guard.h"
+#include "web/save_lock.h"
 #include "web/wheel_form.h"
 
 #include <algorithm>
@@ -44,11 +45,12 @@ void ensureProfiles(const Site& site)
 void addWheelRoutes(const Site& site, httplib::Server& server)
 {
     server.Post("/settings/wheels", [&](const httplib::Request& req, httplib::Response& res) {
+        std::vector<std::string> problems;
+        if (!authorised(req, res, site.config(), problems))
+            return refuse(res, problems);
+        SaveLock saving; // from reading the profiles to writing them back
         ensureProfiles(site);
         Config cfg = site.config();
-        std::vector<std::string> problems;
-        if (!authorised(req, res, cfg, problems))
-            return refuse(res, problems);
         Profiles profiles = cfg.profiles;
         std::string action = req.get_param_value("do");
         int id = std::atoi(req.get_param_value("id").c_str());

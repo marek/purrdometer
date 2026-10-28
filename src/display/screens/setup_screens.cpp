@@ -18,6 +18,22 @@ void drawWifi(Canvas& c, int cx, int cy, int r)
         c.arc(cx, cy, r * i / 3, 45, 135, 3);
 }
 
+// `text` in lines no wider than maxW, at most `lines` of them, the last cut with an ellipsis.
+void drawWrapped(Canvas& c, int x, int y, const std::string& text, const Font& font, int maxW, int lines)
+{
+    std::string line, rest = text;
+    for (int n = 0; n < lines && !rest.empty(); ++n, y += 11) {
+        size_t cut = rest.size();
+        while (cut > 1 && Canvas::textWidth(rest.substr(0, cut), font) > maxW)
+            cut = rest.rfind(' ', cut - 1) == std::string::npos ? cut - 1 : rest.rfind(' ', cut - 1);
+        std::string part = rest.substr(0, cut);
+        rest = rest.substr(std::min(rest.size(), rest.find_first_not_of(' ', cut)));
+        if (n == lines - 1 && !rest.empty())
+            part += "…";
+        c.text(x, y, part, font);
+    }
+}
+
 } // namespace
 
 Canvas renderBoot(Fonts& fonts, std::optional<double> hold)
@@ -42,13 +58,24 @@ Canvas renderStarting(Fonts& fonts)
     return c;
 }
 
+Canvas renderStarting(Fonts& fonts, const std::string& why)
+{
+    if (why.empty())
+        return renderStarting(fonts);
+    Canvas c(W, H);
+    drawWifi(c, 24, 40, 20);
+    c.text(54, 10, "WiFi setup", fonts.get(14, true));
+    drawWrapped(c, 54, 34, why, fonts.get(9), W - 58, 7);
+    return c;
+}
+
 Canvas renderSetup(Fonts& fonts, const setup::State& s, std::time_t now, int webPort)
 {
     using setup::Phase;
     Canvas c(W, H);
     Font small = fonts.get(9), label = fonts.get(9, true);
     if (s.phase == Phase::Starting)
-        return renderStarting(fonts);
+        return renderStarting(fonts, s.message);
     if (s.phase == Phase::Joining) {
         drawWifi(c, 40, 74, 30);
         c.text(84, 30, "Joining", fonts.get(14, true));
@@ -64,6 +91,10 @@ Canvas renderSetup(Fonts& fonts, const setup::State& s, std::time_t now, int web
         c.text(84, 56, "Dashboard:", small);
         std::string url = "http://" + s.message + (webPort == 80 ? "" : std::format(":{}", webPort));
         c.text(84, 70, url, fitFont(fonts, url, W - 90, 12));
+        if (!s.warning.empty()) {
+            c.text(84, 92, "Not applied:", label);
+            c.text(84, 104, s.warning, fitFont(fonts, s.warning, W - 90, 9, false, 7));
+        }
         return c;
     }
 

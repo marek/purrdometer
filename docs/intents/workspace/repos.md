@@ -15,7 +15,7 @@ leaves the machine without the user asking for it at that moment.
 | Contents | Source (`src/`, `display/`), tests, packaging, tools, the guide, intents, plans, skills and roles, committed together |
 | Not committed | `bin/`, `dist/`, `preview/`, `tmp/`, `__pycache__/`, `*.o`; the database and the saved sensor address (machine state under `/var/lib/purrdometer`) |
 | Home | The working copy is `~/workspace/purrdometer` on whiskerwheel; builds and on-device checks happen there |
-| Remote | None configured. Pushing anywhere, or adding a remote, is the user's call at that moment; a push step inside an approved plan does not count |
+| Remotes | `origin` (GitHub, where releases are built) and `whiskerwheel` (the working copy on the Pi). Pushing to either, or adding a remote, is the user's call at that moment; a push step inside an approved plan does not count |
 | Identity | Every commit carries the contributor's own `user.name` and `user.email`; never an AI tool as author, committer, co-author or trailer |
 | Branches | `<first name>/<short-description>`, the first word of `git config user.name` lowercased (`marek/touch-bar`); never named for a tool |
 | Commits | Asked for, not assumed: an agent stages and proposes, the user approves the commit |

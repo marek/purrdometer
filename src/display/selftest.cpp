@@ -106,6 +106,17 @@ int selftest(const Options& o)
         st.message = "192.168.1.196";
         check(!(renderSetup(fonts, st, now) == Canvas(W, H)), std::format("setup screen: {}", setup::phaseName(phase)));
     }
+    st.phase = setup::Phase::Joined;
+    Canvas joined = renderSetup(fonts, st, now);
+    st.warning = "login password, SSH key";
+    Canvas warned = renderSetup(fonts, st, now);
+    setup::State stuck{.phase = setup::Phase::Starting, .message = "could not join Cafe: wrong password?; the hotspot did not start: busy; trying again"};
+    Canvas stuckScreen = renderSetup(fonts, stuck, now);
+    check(!(stuckScreen == renderStarting(fonts)) && !(stuckScreen == Canvas(W, H)),
+          "a hotspot that would not start shows why on the starting screen");
+    writePng(stuckScreen, tmp + "/starting-why.png");
+    check(!(warned == joined), "a joined screen says what of the form was not applied");
+    writePng(warned, tmp + "/joined-warning.png");
     check(!(renderBoot(fonts, 0.3) == renderBoot(fonts, std::nullopt)), "the boot screen shows a hold");
     writePng(renderSetup(fonts, setup::State{.phase = setup::Phase::Hotspot, .ssid = "purrdometer-372a", .password = "abcdefghjk", .deadline = now + 540}, now),
              tmp + "/setup-screen.png");

@@ -6,8 +6,8 @@ Rules and heuristics for AI agents working on purrdometer: a cat-wheel
 odometer on a Raspberry Pi Zero 2 W. A C++26 BlueZ client logs a Bluetooth LE
 cadence sensor's rotations to SQLite; a C++26 program shows them on a 2.13"
 touch e-paper HAT; a C++26 web server (cpp-httplib, `.page` templates
-compiled to C++) shows them in a browser; a `.deb` installs all three and
-configures the system. No PHP, under any circumstances. Re-read
+compiled to C++) shows them in a browser; a root helper sets up WiFi from a
+phone; a `.deb` installs all four and configures the system. No PHP, under any circumstances. Re-read
 when about to do something expensive (a BLE change, a schema change, a
 maintainer-script change, anything the other process or the system depends
 on).
@@ -26,7 +26,7 @@ Three co-equal artifacts; each keeps the others honest.
 | Strand | Where | What |
 |---|---|---|
 | **Intent** | `docs/intents/` | Normative design specs. The end-state contract: what purrdometer *is*, why, and the invariants the running code depends on. |
-| **Tests** | `make test` (`--selftest` of the logger, the web server and the display), `make preview`, `make serve` | The three programs' self-tests, every screen rendered to PNG and the dashboard served from made-up history; see Testing venues below. |
+| **Tests** | `make test` (`--selftest` of the logger, the web server, the display and the setup helper, plus `pagec` and the maintainer scripts), `make preview`, `make serve` | The programs' self-tests, every screen rendered to PNG and the dashboard served from made-up history; see Testing venues below. |
 | **Implementation** | `src/`, `web/pages/`, `data/`, `packaging/`, `system/` | The logger, the display, the web dashboard and its pages, the setup helper, the wheel presets, the package. A folder per program, one job per class ([source-layout](docs/intents/workspace/source-layout.md)). |
 
 `docs/intents/` is a **first-class artifact, not supplementary docs**. When
@@ -137,7 +137,8 @@ pictures no longer show them, `make media` remakes them.
 
 | Venue | Command | When |
 |---|---|---|
-| **Unit** | `make test` | Before each commit of code: the `--selftest` of all three programs. |
+| **Unit** | `make test` | Before each commit of code: the `--selftest` of all four programs, `pagec` and the maintainer scripts. |
+| **Sanitizers** | `make test-address`, `make test-thread` | Storage, threads and descriptors: [build-and-run.md](docs/intents/workspace/build-and-run.md#make-targets). |
 | **Screens** | `make preview`, then look at `preview/*.png` | Any change to what is drawn. Looking is the test: a render that runs is not a render that reads. |
 | **Web page** | `make serve`, then open `http://whiskerwheel:8081/` (or screenshot it headless) | Any change to a template or the dashboard. |
 | **Package** | `make deb`, then `sudo apt install ./dist/…` on whiskerwheel | Any change to `packaging/`, units or maintainer scripts. Install, upgrade, remove, purge and reinstall are each checked when the scripts change. |
@@ -152,8 +153,9 @@ database. See the `verification` skill.
 
 ## Repo boundaries
 
-- **Never push** unless the user asks for that push at that moment. The repo
-  has no remote; adding one is the user's call too.
+- **Never push** unless the user asks for that push at that moment, and never
+  add a remote on your own: [repos.md](docs/intents/workspace/repos.md) owns
+  which remotes exist and what may go to them.
 - **Never commit without the user's go-ahead.** Stage, show what is staged,
   propose the message.
 - **Every commit carries the contributor's own git identity**: their

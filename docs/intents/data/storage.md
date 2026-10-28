@@ -41,7 +41,7 @@ read. No process depends on another running.
 | `battery` | Battery percentage | Once per connection |
 | `rpm` | Latest rotation rate; `0` when disconnected | Per measurement |
 | `last_motion` | Unix time of the last measurement that added rotations | Per moving measurement |
-| `last_revs`, `last_event_time`, `last_wall` | The previous measurement, so a restarted logger counts across the gap | Per measurement |
+| `last_counter`, `last_revs`, `last_event_time`, `last_wall` | The previous measurement, so a restarted logger counts across the gap; removed together when the sensor changes | Per measurement |
 
 ## Rules
 
@@ -51,7 +51,11 @@ read. No process depends on another running.
   read from `profiles.conf`; it follows a change within a second.
 - Days are local days. `minutes` is the record and never changes with the
   timezone; `days` is derived from it, and rebuilt when the timezone changes.
-- A measurement and the state it updates are written in one transaction.
+- A measurement and the state it updates (`last_*`, `last_motion`, `rpm`) are
+  written in one transaction. A transaction that fails is rolled back whole
+  and the connection stays usable for the next one; the logger then keeps its
+  previous measurement ([accounting.md](accounting.md)), so a failed write
+  loses no rotation and counts none twice.
 
 ## Reading the history
 

@@ -6,10 +6,10 @@
 ## Requirement
 
 One `.deb` installs a working purrdometer on a Raspberry Pi OS (trixie or
-later) Pi: all three services enabled and running, and every system setting they
+later) Pi: all four services enabled and running, and every system setting they
 need applied. No setting outside the package's own files is ever made by
-hand. Remove stops the services; purge also undoes the system settings. The
-rotation history survives both.
+hand. Remove stops the services; purge also takes out what the package wrote
+into the system's files. The rotation history survives both.
 
 ## Package
 
@@ -42,7 +42,7 @@ state in `/run/purrdometer-setup`.
 |---|---|---|
 | `ConnectionSupervisionTimeout = 600` under `[LE]`, after a `# purrdometer:` marker line | `/etc/bluetooth/main.conf` | [../ble/link.md](../ble/link.md); BlueZ 5.66 reads no drop-in directory, so the line goes into `main.conf` itself |
 | `Privacy = device` under `[General]`, after its own `# purrdometer:` marker line | `/etc/bluetooth/main.conf` | A random address for every connection: a sensor that kept a pairing with the Pi's own address sends it nothing ([../ble/link.md](../ble/link.md#security)) |
-| Cached `[ConnectionParameters]` cleared whenever a BlueZ setting is added | `/var/lib/bluetooth/*/*/info` | A cached per-device value overrides the default |
+| Cached `[ConnectionParameters]` cleared whenever a BlueZ setting is added or put right | `/var/lib/bluetooth/*/*/info` | A cached per-device value overrides the default |
 | `wifi.powersave = 2` | the NetworkManager drop-in | [../ble/link.md](../ble/link.md) |
 | Bluetooth not soft-blocked (rfkill), on every install and upgrade | `/sys/class/rfkill`, kept by systemd-rfkill | Without it BlueZ cannot power the adapter; an OS upgrade can leave it blocked |
 | The `purrdometer` system user and group | `adduser` | Services run unprivileged |
@@ -51,14 +51,35 @@ state in `/run/purrdometer-setup`.
 
 | Action | Result |
 |---|---|
-| Install, upgrade | User and state directory exist, each BlueZ setting is present exactly once, all three services enabled and restarted |
+| Install, upgrade | User and state directory exist, each BlueZ setting is present exactly once under its marker, all four services enabled and restarted. The scripts check the settings, not a marker: a value edited, removed or duplicated, or a marker left without its setting, is put right on the next install or upgrade, and the install stops with a message when a setting cannot be written. A value of the same key set elsewhere in its section is replaced, not kept |
 | Upgrade from a version with `settings.ini` | `/var/lib/purrdometer/settings.ini` is renamed `settings.conf` by `preinst`, before the new programs are unpacked, once, and only when no `settings.conf` exists; nothing in it changes |
 | Remove | Services stopped and disabled; conffiles, system settings and data kept |
-| Purge | Every marker line and the setting after it removed from `main.conf` and BlueZ restarted; the history in `/var/lib/purrdometer` and the `purrdometer` user that owns it are kept, and the purge says so |
+| Purge | Every marker line, and the setting under it when it is the one the package wrote, removed from `main.conf` and BlueZ restarted; no other line is touched. When `main.conf` cannot be rewritten the purge says so and finishes, leaving the file as it was. The history in `/var/lib/purrdometer` and the `purrdometer` user that owns it are kept, and the purge says so |
+| Not undone by purge | What cannot be restored from what was kept: the value a replaced setting had (BlueZ's default applies again), the cached connection parameters (BlueZ learns them again), and the rfkill state (Bluetooth stays unblocked) |
 | Reinstall after purge | Same as a first install; the kept history is picked up |
 
 A later `bluez` upgrade may ask about the modified `main.conf`; keeping the
 local version keeps the setting.
+
+## Proven by
+
+`packaging/test-maintainer-scripts.sh`, run by `make test`: the maintainer
+scripts over a scratch copy of `/etc/bluetooth` and `/var/lib/bluetooth`, with
+the system's programs stubbed: install, upgrade unchanged, each setting
+repaired when edited, removed, duplicated or left without its marker, an empty
+file and one without a final newline, remove, purge touching only what the
+package wrote, a purge that cannot rewrite `main.conf` warning and finishing,
+reinstall after purge equal to a first install, a failing write stopping the
+install, and the `settings.ini` rename.
+
+`packaging/test-package-lifecycle.sh`, after `packaging/build-in-container.sh`:
+the built `.deb` installed, upgraded over an edited setting, removed,
+reinstalled, purged and reinstalled in a throwaway trixie arm64 container, with
+`main.conf`, the user, the state directory and the enabled units checked after
+each step. The container runs no systemd and takes the scripts' chroot path
+(files written, units enabled, nothing restarted). On whiskerwheel: install,
+upgrade, remove, purge and reinstall of the built `.deb`, with `bluetoothctl`
+and `journalctl` after each.
 
 ## The Raspberry Pi image
 

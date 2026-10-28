@@ -34,9 +34,10 @@ sudo apt install ./purrdometer_*_arm64.deb
 
 Either way the package:
 
-- installs and starts three services: `purrdometer-logger` (Bluetooth to the
-  database), `purrdometer-display` (the screen) and `purrdometer-web` (the
-  [web dashboard](web.md) on port 80);
+- installs and starts four services: `purrdometer-logger` (Bluetooth to the
+  database), `purrdometer-display` (the screen), `purrdometer-web` (the
+  [web dashboard](web.md) on port 80) and `purrdometer-setup` (the WiFi
+  hotspot and setup page's helper, which runs as root);
 - sets Bluetooth's LE supervision timeout to 6 s and turns WiFi power-save
   off, which keeps the sensor connected ([troubleshooting](troubleshooting.md#a-sensor-that-keeps-dropping));
 - creates a `purrdometer` system user and `/var/lib/purrdometer` for the history.
@@ -51,7 +52,8 @@ does when you hold the touch bar for three seconds, or hold the screen while
 it starts. The screen shows a hotspot name, its password and a QR code. Join
 it from your phone and the setup page opens (or go to `http://10.42.0.1`):
 choose your WiFi and its password, and optionally a login password, SSH and
-the wheel. The Pi joins your WiFi and the screen shows its new address. If
+the wheel. The Pi joins your WiFi and the screen shows its new address, and
+says under it if the login password or SSH could not be set. If
 nothing is sent within ten minutes, the hotspot closes and the Pi goes back
 to the WiFi it had.
 
@@ -90,4 +92,7 @@ sudo apt purge purrdometer    # also takes the Bluetooth setting out again
 ```
 
 The history in `/var/lib/purrdometer` is kept even by a purge. Delete it by
-hand if you really want it gone.
+hand if you really want it gone. A purge cannot restore what the package
+changed and did not record: Bluetooth stays unblocked, BlueZ learns its
+connection parameters again, and a setting of the same name that was in
+`main.conf` before is not brought back.

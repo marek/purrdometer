@@ -168,6 +168,17 @@
   <input id="wake" name="wake_turns" type="number" min="0" max="10" value="<%= e.wakeTurns %>">
   <p class="hint">A sleeping sensor misses its first couple of turns. Added at the first turn it counts after waking; 0 counts only what it measures.</p>
 
+  <h2>Debug log <span>· exact sensor messages, off by default</span></h2>
+  <label><input type="checkbox" name="raw_log" value="on"<%= e.rawLog ? " checked" : "" %>> Keep a raw sensor log</label>
+  <label for="rawdays">Days to keep</label>
+  <input id="rawdays" name="raw_log_days" type="number" min="1" max="14" value="<%= e.rawLogDays %>">
+  <p class="hint">For diagnosing missed turns or sensor restarts. About 2 MB for four hours of running; turning it off keeps the days already written.</p>
+<% if (!v.sensorLogDays.empty()) { -%>
+  <p>Download: <% for (size_t i = 0; i < v.sensorLogDays.size(); ++i) { const auto& day = v.sensorLogDays[i]; %><%== i ? " · " : "" %><a href="/settings/sensor-log?day=<%= day %>"><%= day %></a><% } %></p>
+<% } else { -%>
+  <p class="hint">No sensor log days yet.</p>
+<% } -%>
+
   <h2>Test <span>· nothing is saved</span></h2>
   <div class="row">
     <button type="button" class="secondary" id="test">Start test</button>

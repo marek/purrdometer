@@ -8,8 +8,9 @@ namespace {
 
 void usage()
 {
-    std::println(stderr, "usage: purrdometer-web [--config PATH] [--overrides PATH] [--profiles PATH] [--db PATH] [--wheels PATH]\n"
-                         "       [--bind ADDR] [--port N] [--legacy-port N] [--check-config] [--selftest]");
+    std::println(stderr, "usage: purrdometer-web [--config PATH] [--overrides PATH] [--profiles PATH] [--db PATH]\n"
+                         "       [--sensor-log-dir PATH] [--wheels PATH] [--bind ADDR] [--port N] [--legacy-port N]\n"
+                         "       [--check-config] [--selftest]");
 }
 
 } // namespace
@@ -29,6 +30,7 @@ std::optional<Options> parseOptions(int argc, char** argv)
         else if (a == "--overrides") p.overrides = next();
         else if (a == "--profiles") p.profiles = next();
         else if (a == "--db") p.db = next();
+        else if (a == "--sensor-log-dir") p.sensorLogDir = next();
         else if (a == "--wheels") p.wheels = next();
         else if (a == "--bind") o.site.bind = next();
         else if (a == "--port") o.site.port = std::stoi(next());

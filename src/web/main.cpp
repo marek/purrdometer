@@ -2,8 +2,9 @@
 // screens, read-only from the logger's database, and the settings page.
 // cpp-httplib serves pages pagec compiled into C++ (web/pages/*.page).
 //
-// Usage: purrdometer-web [--config PATH] [--overrides PATH] [--profiles PATH] [--db PATH] [--wheels PATH]
-//                        [--bind ADDR] [--port N] [--check-config] [--selftest]
+// Usage: purrdometer-web [--config PATH] [--overrides PATH] [--profiles PATH] [--db PATH]
+//                        [--sensor-log-dir PATH] [--wheels PATH] [--bind ADDR] [--port N]
+//                        [--legacy-port N] [--check-config] [--selftest]
 
 #include "web/options.h"
 #include "web/server.h"

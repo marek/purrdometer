@@ -54,6 +54,12 @@ lives in the commit message.
 // the wheel is turning, so polling would wake the CPU for nothing
 ```
 
+**One exception: a migration says what shape it accepts.** Code that reads
+an older schema or file name states that input as a present-tense fact
+(`// settings.ini, the page's settings file before settings.conf`,
+`// versions 2 and 3 key minutes by the minute alone`), never why it changed,
+when, or what bug it fixed.
+
 **A fix often makes the surrounding comment false.** Check comments
 near a change for claims about behaviour that no longer hold.
 
@@ -139,7 +145,8 @@ Handle the exceptional case first and return, so the main path stays flat.
   window and each screen are their own classes and files.
 - A program lives in its own folder (`src/logger/`, `src/display/`,
   `src/web/`, `src/setup/`) with a `main.cpp` that only parses options,
-  builds the parts and runs them, and a `selftest.cpp`. What more than
+  builds the parts and runs them, and a `selftest.cpp` that is its one
+  `--selftest` entry point and runs the `selftest_<area>.cpp` cases. What more than
   one program uses is in `src/common/`. A program never includes
   another program's folder. The full rules are in
   [workspace/source-layout.md](../../intents/workspace/source-layout.md).
