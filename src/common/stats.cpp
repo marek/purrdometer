@@ -1,5 +1,7 @@
 #include "common/stats.h"
 
+#include "common/timezone.h"
+
 #include <sqlite3.h>
 
 #include <memory>
@@ -82,14 +84,25 @@ Stats loadStats(const std::string& dbPath, cal::Day today, const std::map<int, d
         s.profileRevs[wheel] += revs;
         s.estimated += sqlite3_column_int64(st, 3);
     };
-    // Schema 4 keys rotations by wheel profile; older databases are all profile 1.
-    if (!query("SELECT date(minute * 60, 'unixepoch', 'localtime'), wheel, SUM(revs + estimated), SUM(estimated) "
-               "FROM minutes GROUP BY 1, 2",
-               day) &&
-        !query("SELECT date(minute * 60, 'unixepoch', 'localtime'), 1, SUM(revs + estimated), SUM(estimated) "
-               "FROM minutes GROUP BY 1",
-               day))
-        query("SELECT date(minute * 60, 'unixepoch', 'localtime'), 1, SUM(revs), 0 FROM minutes GROUP BY 1", day);
+    // Version 5 keeps a row per local day and wheel: read it when it is grouped
+    // by this process's timezone. Otherwise the minutes: version 4 keys them by
+    // wheel profile, older versions are all profile 1's.
+    bool daysHere = false;
+    query("SELECT value FROM meta WHERE key = 'days_timezone'",
+          [&](sqlite3_stmt* st) { daysHere = str(st, 0) == timezoneKey(); });
+    const char* byDay = "SELECT day, wheel, revs + estimated, estimated FROM days";
+    const char* fromMinutes[] = {
+        "SELECT date(minute * 60, 'unixepoch', 'localtime'), wheel, SUM(revs + estimated), SUM(estimated) "
+        "FROM minutes GROUP BY 1, 2",
+        "SELECT date(minute * 60, 'unixepoch', 'localtime'), 1, SUM(revs + estimated), SUM(estimated) "
+        "FROM minutes GROUP BY 1",
+        "SELECT date(minute * 60, 'unixepoch', 'localtime'), 1, SUM(revs), 0 FROM minutes GROUP BY 1",
+    };
+    if (!daysHere || !query(byDay, day))
+        for (const char* sql : fromMinutes)
+            if (query(sql, day))
+                break;
+
     query("SELECT key, value FROM state", [&](sqlite3_stmt* st) {
         std::string key = str(st, 0), value = str(st, 1);
         try {

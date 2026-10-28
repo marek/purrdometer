@@ -3,6 +3,8 @@
 //   minutes(minute, wheel, revs, estimated)  permanent history, keyed by minute and
 //                                   wheel profile; minute = unix_time / 60;
 //                                   estimated: turns the sensor missed
+//   days(day, wheel, revs, estimated)  the same per local day: what readers read, kept
+//                                   with each write and rebuilt for another timezone
 //   samples(ts, revs, event_time, delta)  raw readings, pruned after 30 days
 //   sensors(address PK, name, kind, rssi, last_seen)  every CSC sensor heard
 //   state(key PK, value)            live status for the display and the dashboard
@@ -48,6 +50,7 @@ private:
     void exec(const std::string& sql);
     bool hasColumn(const char* table, const char* column);
     void migrate();
+    void keepDays();
 
     sqlite3* db_ = nullptr;
     std::recursive_mutex mutex_; // called from the D-Bus thread and the main thread

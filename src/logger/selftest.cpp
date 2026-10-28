@@ -116,6 +116,52 @@ int selftest()
     check(std::fabs(st.totalKm - (2 * 3.0 + 2 * 4.0) / 1000) < 1e-9, "each wheel's rotations on its own circumference");
     std::remove(file.c_str());
 
+    // days: kept equal to minutes across midnight and two wheels, rebuilt for another timezone,
+    // and read as the minutes would be.
+    {
+        auto sql = [&](const char* q) {
+            sqlite3* raw = nullptr;
+            sqlite3_open(file.c_str(), &raw);
+            std::string out;
+            sqlite3_exec(
+                raw, q,
+                [](void* o, int n, char** v, char**) {
+                    for (int i = 0; i < n; ++i)
+                        *static_cast<std::string*>(o) += std::string(v[i] ? v[i] : "") + (i + 1 < n ? "|" : "\n");
+                    return 0;
+                },
+                &out, nullptr);
+            sqlite3_close(raw);
+            return out;
+        };
+        const char* fromMinutes = "SELECT date(minute * 60, 'unixepoch', 'localtime'), wheel, SUM(revs), SUM(estimated) "
+                                  "FROM minutes GROUP BY 1, 2 ORDER BY 1, 2";
+        const char* fromDays = "SELECT day, wheel, revs, estimated FROM days ORDER BY 1, 2";
+        std::time_t base = now - now % 86400;
+        {
+            Store disk(file);
+            disk.record(double(base - 30), {Counter::Crank, 1, 0}, 3, 2, 1);    // before midnight UTC
+            disk.record(double(base + 30), {Counter::Crank, 2, 0}, 4, 0, 1);    // after it
+            disk.record(double(base + 90), {Counter::Crank, 3, 0}, 5, 0, 2);    // another wheel
+            disk.record(double(base + 95), {Counter::Crank, 4, 0}, 1, 0, 2);    // the same minute again
+        }
+        std::string m = sql(fromMinutes), d = sql(fromDays);
+        check(!m.empty() && m == d, "days are kept equal to minutes, across midnight and two wheels");
+        sqlite3* raw = nullptr;
+        sqlite3_open(file.c_str(), &raw);
+        sqlite3_exec(raw, "UPDATE meta SET value = 'Elsewhere/Nowhere' WHERE key = 'days_timezone'; DELETE FROM days",
+                     nullptr, nullptr, nullptr);
+        sqlite3_close(raw);
+        purr::Stats slow = purr::loadStats(file, purr::cal::localDay(now), {{1, 3.0}, {2, 4.0}}); // days not ours: minutes
+        { Store reopened(file); }
+        check(sql(fromDays) == m, "another timezone rebuilds the days from the minutes");
+        purr::Stats fast = purr::loadStats(file, purr::cal::localDay(now), {{1, 3.0}, {2, 4.0}});
+        check(fast.total == slow.total && fast.daily == slow.daily && fast.profileRevs == slow.profileRevs &&
+                  fast.estimated == slow.estimated && std::fabs(fast.totalKm - slow.totalKm) < 1e-12 && fast.total == 15,
+              "reading the days gives what reading the minutes gives");
+    }
+    std::remove(file.c_str());
+
     // A version 3 database: minutes keyed by the minute alone.
     {
         sqlite3* raw = nullptr;

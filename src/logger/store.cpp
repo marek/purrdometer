@@ -2,9 +2,11 @@
 
 #include "logger/log.h"
 #include "logger/statement.h"
+#include "common/timezone.h"
 
 #include <sqlite3.h>
 
+#include <chrono>
 #include <stdexcept>
 
 namespace purr::logger {
@@ -16,16 +18,17 @@ Store::Store(const std::string& path)
     sqlite3_busy_timeout(db_, 5000);
     exec("PRAGMA journal_mode=WAL");
     exec("PRAGMA synchronous=NORMAL");
+    exec("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)");
     migrate();
+    keepDays();
     exec("CREATE TABLE IF NOT EXISTS samples (ts REAL NOT NULL, revs INTEGER NOT NULL, "
          "event_time INTEGER NOT NULL, delta INTEGER NOT NULL)");
     exec("CREATE INDEX IF NOT EXISTS samples_ts ON samples(ts)");
     exec("CREATE TABLE IF NOT EXISTS sensors (address TEXT PRIMARY KEY, name TEXT, kind TEXT, "
          "rssi INTEGER, last_seen REAL)");
     exec("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)");
-    exec("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)");
-    exec("INSERT OR IGNORE INTO meta VALUES ('schema_version', '4')");
-    exec("UPDATE meta SET value = '4' WHERE key = 'schema_version'");
+    exec("INSERT OR IGNORE INTO meta VALUES ('schema_version', '5')");
+    exec("UPDATE meta SET value = '5' WHERE key = 'schema_version'");
     exec("INSERT OR IGNORE INTO meta VALUES ('created', strftime('%s','now'))");
     exec("DELETE FROM samples WHERE ts < strftime('%s','now') - 30*86400");
 }
@@ -60,6 +63,27 @@ void Store::migrate()
     exec("ALTER TABLE minutes_v4 RENAME TO minutes");
     exec("COMMIT");
     log("database: rotations now kept per wheel profile, all history under profile 1");
+}
+
+void Store::keepDays()
+{
+    exec("CREATE TABLE IF NOT EXISTS days (day TEXT NOT NULL, wheel INTEGER NOT NULL, revs INTEGER NOT NULL, "
+         "estimated INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (day, wheel))");
+    std::string zone = timezoneKey();
+    Statement grouped(db_, "SELECT value FROM meta WHERE key = 'days_timezone'");
+    if (grouped.step() == SQLITE_ROW && grouped.column(0) == zone)
+        return;
+    // A new database, version 4, or another timezone: the days from the minutes, once.
+    auto started = std::chrono::steady_clock::now();
+    exec("BEGIN");
+    exec("DELETE FROM days");
+    exec("INSERT INTO days SELECT date(minute * 60, 'unixepoch', 'localtime'), wheel, SUM(revs), SUM(estimated) "
+         "FROM minutes GROUP BY 1, 2");
+    Statement keep(db_, "INSERT OR REPLACE INTO meta VALUES ('days_timezone', ?1)");
+    keep.text(1, zone).step();
+    exec("COMMIT");
+    log("database: days grouped by ", zone, " in ",
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count(), " ms");
 }
 
 bool Store::hasColumn(const char* table, const char* column)
@@ -114,6 +138,10 @@ void Store::record(double ts, Sample cur, uint32_t delta, int estimated, int whe
                          "ON CONFLICT(minute, wheel) DO UPDATE SET "
                          "revs = revs + excluded.revs, estimated = estimated + excluded.estimated");
         s.i64(1, int64_t(ts) / 60).i64(2, wheel).i64(3, delta).i64(4, estimated).step();
+        Statement d(db_, "INSERT INTO days VALUES (date(?1 * 60, 'unixepoch', 'localtime'), ?2, ?3, ?4) "
+                         "ON CONFLICT(day, wheel) DO UPDATE SET "
+                         "revs = revs + excluded.revs, estimated = estimated + excluded.estimated");
+        d.i64(1, int64_t(ts) / 60).i64(2, wheel).i64(3, delta).i64(4, estimated).step();
     }
     if (delta > 0) {
         Statement r(db_, "INSERT INTO samples VALUES (?1, ?2, ?3, ?4)");

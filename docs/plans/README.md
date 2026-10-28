@@ -29,3 +29,4 @@ the rest can be worked.
 | [2026-10-27-2000-one-job-per-class.md](2026-10-27-2000-one-job-per-class.md) | The source divided into a folder per program and a class per job, behaviour unchanged | 9 | 0 |
 | [2026-10-28-0846-wheel-profiles.md](2026-10-28-0846-wheel-profiles.md) | Wheels as profiles, rotations stored under the current one, so a new wheel leaves history alone and an edit corrects it; `.conf` names for the catalogue and the page's settings | 10 | 0 |
 | [2026-10-28-0859-install-paths-and-warnings.md](2026-10-28-0859-install-paths-and-warnings.md) | Every path from one header built from the Makefile's install directories; a build with no warnings, kept that way by -Werror | 6 | 0 |
+| [2026-10-28-0933-history-that-stays-fast.md](2026-10-28-0933-history-that-stays-fast.md) | Reads of the history that cost the same after five years as today, measured on the Pi | 6 | 0 |
