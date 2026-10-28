@@ -2,7 +2,7 @@
 
 # purrdometer
 
-An odometer for a cat wheel: every rotation counted, every kilometre kept.
+An odometer for a cat wheel: tracking distance, speed, and "you won't let me outside" rage runs.
 
 [Why](#why) · [Screens](#screens) · [Web](#web) · [Install](#install) · [Guide](docs/guide/README.md) · [Configuration](docs/guide/configuration.md) · [Contributing](#contributing)
 
@@ -12,11 +12,9 @@ An odometer for a cat wheel: every rotation counted, every kilometre kept.
 
 ## Why
 
-A cat on a wheel runs further than you'd guess, mostly at night, and nobody
-is watching. purrdometer puts a Bluetooth cadence sensor on the wheel and a
-small e-paper screen beside it, so you can see in the morning how many
-rotations she did, how far that was, and how this week compares with the
-last month.
+My cat, Murder Mittens, runs further than you'd guess. She's on her wheel constantly: when she wakes up, after eating, post-poop zoom-zooms, or when she's angry because she's not allowed outside.
+
+`purrdometer` straps a Bluetooth cadence sensor to the 6-ft hamster wheel in my living room and hooks up a small e-paper display beside it. This lets me keep track of how many rotations she logged, how far she actually ran, and how her physical activity is somehow higher than mine on any given day.
 
 ## Screens
 
@@ -36,20 +34,18 @@ Four screens, picked from the touch bar along the bottom edge.
 
 ## Web
 
-The same history in a browser at `http://whiskerwheel:8080/`, served by a
-small C++ server with pages compiled to C++: a few MB of memory
-and a page in tens of milliseconds, even on a Pi Zero.
+You can also view history in a browser at http://whiskerwheel:8080. It's served by a tiny C++ binary that compiles pages directly into C++—taking up a few megabytes of RAM and responding in tens of milliseconds, even on a Pi Zero.
 
 ![The web dashboard: totals and live speed, the last 30 days, a year of days, all time with total distance](docs/media/web.png)
 
 ## Features
 
-- Every rotation logged to SQLite, including ones made while the logger was down: [the sensor](docs/guide/sensor.md)
-- Distance from the wheel's running diameter, with presets for a variety of popular brands or a custom diameter in cm or inches, and history recomputed when it changes: [configuration](docs/guide/configuration.md)
-- NOW, 30 DAYS, CALENDAR and ALL TIME screens on a 2.13" touch e-paper HAT: [screens](docs/guide/screens.md)
-- A web dashboard, its settings behind a gear, and a JSON API on the home network: [web](docs/guide/web.md)
-- A Bluetooth link that rides out the Pi Zero 2 W's shared WiFi/Bluetooth radio: [troubleshooting](docs/guide/troubleshooting.md#a-sensor-that-keeps-dropping)
-- One `.deb` that installs everything and configures the system: [install](docs/guide/install.md)
+- **Resilient logging:** Logs every rotation to SQLite, catching up on missed events if the logger restarts: [the sensor](docs/guide/sensor.md).
+- **Diameter presets:** Computes distance using your wheel's actual running diameter (common brand presets included, or set custom cm/inches). History recomputes automatically if you change it: [configuration](docs/guide/configuration.md).
+- **E-paper UI:** NOW, 30 DAYS, CALENDAR, and ALL TIME views on a 2.13" touch e-paper HAT: [screens](docs/guide/screens.md).
+- **Web dashboard & API:** Local web interface with a settings page and JSON API: [web](docs/guide/web.md).
+- **Robust BLE link:** Built to survive the Pi Zero 2 W's shared WiFi/Bluetooth radio without dropping connection: [troubleshooting](docs/guide/troubleshooting.md#a-sensor-that-keeps-dropping).
+- **Single package setup:** One `.deb` installs everything and sets up systemd services: [install](docs/guide/install.md).
 
 ## Install
 
