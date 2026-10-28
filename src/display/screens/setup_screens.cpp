@@ -42,7 +42,7 @@ Canvas renderStarting(Fonts& fonts)
     return c;
 }
 
-Canvas renderSetup(Fonts& fonts, const setup::State& s, std::time_t now)
+Canvas renderSetup(Fonts& fonts, const setup::State& s, std::time_t now, int webPort)
 {
     using setup::Phase;
     Canvas c(W, H);
@@ -62,7 +62,7 @@ Canvas renderSetup(Fonts& fonts, const setup::State& s, std::time_t now)
         c.text(84, 14, "Connected to", small);
         c.text(84, 26, s.network, fitFont(fonts, s.network, W - 90, 14));
         c.text(84, 56, "Dashboard:", small);
-        std::string url = "http://" + s.message + ":8080";
+        std::string url = "http://" + s.message + (webPort == 80 ? "" : std::format(":{}", webPort));
         c.text(84, 70, url, fitFont(fonts, url, W - 90, 12));
         return c;
     }

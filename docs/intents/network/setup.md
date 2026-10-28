@@ -59,7 +59,7 @@ goes on.
 
 | Subject | Rule |
 |---|---|
-| Where | `/setup` on the dashboard server; anything on port 80 redirects there while setup runs, and to the dashboard otherwise |
+| Where | `/setup` on the dashboard's server, on port 80. While setup runs, a hotspot client asking for anything else (a phone's connectivity check, any site) is redirected to `http://10.42.0.1/setup`; everyone else gets the dashboard as always |
 | Who | Only clients on the hotspot (`10.42.0.0/24`) while setup runs; others get a page saying setup is not running. The form carries a token tied to a cookie |
 | WiFi | The networks scanned, strongest first, or a name typed in; its password |
 | Login | The login user (the first account with uid 1000–59999) and a new password, twice; optionally SSH on, with a public key |

@@ -10,7 +10,7 @@
 #include "web/dashboard_routes.h"
 #include "web/html.h"
 #include "web/save_guard.h"
-#include "web/portal.h"
+#include "web/legacy.h"
 #include "web/server.h"
 #include "common/setup_form.h"
 #include "common/setup_state.h"
@@ -114,6 +114,10 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
               !cfg.overridden && cfg.profilesSeeded && cfg.profiles.list.size() == 1 &&
               cfg.profiles.list[0].preset == "one-fast-cat",
           "settings from /etc; the wheel is profile 1, seeded from [wheel]");
+    std::ofstream(conf) << "[web]\n";
+    Config defaults = loadConfig(presets, conf, over, prof);
+    check(defaults.port == 80 && defaults.legacyPort == 8080, "the dashboard on port 80, the old port redirecting");
+    std::ofstream(conf) << "[wheel]\nunits = in\nmodel = one-fast-cat\ndiameter = 43.5\n[web]\nport = 9000\n";
     Editable e = cfg.editable;
     e.units = "cm";
     e.model = "grand-ferris";
@@ -292,21 +296,14 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
           "settings_access = off refuses saving, wheels included");
     std::remove(prof.c_str());
 
-    // Setup mode's page and portal, with this machine standing in for the hotspot.
+    // Setup mode's page and captive redirect, with this machine standing in for the hotspot.
     srv.paths.setupState = tmpDir + "/selftest-setup-state";
     srv.paths.setupNetworks = tmpDir + "/selftest-setup-networks";
     srv.paths.setupApply = tmpDir + "/selftest-setup-apply";
     for (auto& f : {srv.paths.setupState, srv.paths.setupNetworks, srv.paths.setupApply})
         std::remove(f.c_str());
     std::ofstream(conf) << "[wheel]\nmodel = ferris-g5\n";
-    httplib::Server portal;
-    addPortalRoutes(srv, portal);
-    int portalPort = portal.bind_to_any_port("127.0.0.1");
-    std::thread portalThread([&] { portal.listen_after_bind(); });
-    httplib::Client phone("127.0.0.1", portalPort);
-    httplib::Result probe;
-    for (int i = 0; i < 50 && !(probe = phone.Get("/setup")); ++i)
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    httplib::Client phone("127.0.0.1", port); // the same server: the setup page is the dashboard's
     auto notRunning = phone.Get("/setup");
     check(notRunning && notRunning->status == 403 && notRunning->body.find("Setup is not running") != std::string::npos,
           "the setup page is closed while setup is not running");
@@ -344,16 +341,29 @@ int selftest(const std::string& wheelsPath, const std::string& tmpDir)
               applied->wifiPassword == "pass:word#1" && applied->ssh && (file.st_mode & 0777) == 0600,
           "a complete form goes to the helper, readable by its owner only");
 
-    probe = phone.Get("/generate_204");
-    check(probe && probe->status == 302 && probe->get_header_value("Location") == "http://10.42.0.1/setup",
-          "a phone's connectivity check lands on the setup page");
+    auto probe = phone.Get("/generate_204");
+    auto anySite = phone.Get("/");
+    check(probe && probe->status == 302 && probe->get_header_value("Location") == "http://10.42.0.1/setup" && anySite &&
+              anySite->status == 302,
+          "in setup, a hotspot client's connectivity check and any page land on the setup page");
     setup::writeState({}, srv.paths.setupState);
-    srv.port = port;
     auto home = phone.Get("/");
-    check(home && home->status == 302 && home->get_header_value("Location") == std::format("http://127.0.0.1:{}/", port),
-          "outside setup, port 80 sends to the dashboard");
-    portal.stop();
-    portalThread.join();
+    check(home && home->status == 200 && home->body.find("href=\"/settings\"") != std::string::npos,
+          "outside setup, the same client gets the dashboard");
+    srv.hotspotPrefix = setup::HOTSPOT_PREFIX;
+
+    httplib::Server old;
+    web::addLegacyRedirect(80, old);
+    int oldPort = old.bind_to_any_port("127.0.0.1");
+    std::thread oldThread([&] { old.listen_after_bind(); });
+    httplib::Client bookmark("127.0.0.1", oldPort);
+    httplib::Result moved;
+    for (int i = 0; i < 50 && !(moved = bookmark.Get("/settings?saved=1")); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    check(moved && moved->status == 301 && moved->get_header_value("Location") == "http://127.0.0.1/settings?saved=1",
+          "the old port redirects to the same page on port 80");
+    old.stop();
+    oldThread.join();
     for (auto& f : {srv.paths.setupState, srv.paths.setupNetworks, srv.paths.setupApply})
         std::remove(f.c_str());
 

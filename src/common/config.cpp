@@ -171,6 +171,12 @@ Config loadConfig(const WheelPresets& presets, const std::string& conf, const st
             else
                 c.errors.push_back("[web] port must be a number from 1 to 65535");
         }
+        if (auto v = ini->get("web", "legacy_port")) {
+            if (auto n = parseInt(*v); n && *n >= 0 && *n < 65536)
+                c.legacyPort = *n;
+            else
+                c.errors.push_back("[web] legacy_port must be 0 (none) or a number up to 65535");
+        }
         if (auto v = ini->get("web", "settings_access")) {
             auto a = lower(*v);
             if (a == "lan") c.access = SettingsAccess::Lan;

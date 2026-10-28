@@ -17,7 +17,7 @@ Fast Cat and Star Cat wheels, and any wheel works once its diameter is known.
 | Distance | Rotations × the wheel's running circumference; pick a known wheel or give a diameter in any unit, and all history is recomputed |
 | Screens | NOW (totals, today, live speed), 30 DAYS (bars per day), CALENDAR (weeks of days, shaded by distance), ALL TIME (since the first rotation, with a cumulative line) |
 | Touch bar | Four tabs along the bottom edge of the screen choose the screen |
-| Web | The same history in a browser at `http://whiskerwheel:8080/`, with a JSON API |
+| Web | The same history in a browser at `http://whiskerwheel/`, with a JSON API |
 | Reliability | The sensor reconnects by itself after a drop or a sleep; the link tolerates seconds of radio loss |
 | Install | One `.deb` installs all three services and every system setting they need |
 

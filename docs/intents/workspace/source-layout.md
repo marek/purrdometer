@@ -17,7 +17,7 @@ that starts doing a second job is split before the second job is finished.
 | `src/common/` | What more than one program uses: config and settings, wheels, calendar days, number formats, the database reader, key=value files, file watching, setup mode's shared files |
 | `src/logger/` | `purrdometer-logger`: revolution accounting, the SQLite writer, BlueZ discovery, the sensor's connection, the logger's loop |
 | `src/display/` | `purrdometer-display`: the panel, touch and pins; the canvas and text; taps and holds; the refresh policy; the screens, one file each (`src/display/screens/`); the app's loop |
-| `src/web/` | `purrdometer-web`: the server and one module per group of routes (dashboard, API, settings, setup, the port-80 portal), access rules, the pages' view models |
+| `src/web/` | `purrdometer-web`: the server and one module per group of routes (dashboard, API, settings, setup, the captive redirect, the 8080 redirect), access rules, the pages' view models |
 | `src/setup/` | `purrdometer-setup`: running commands, NetworkManager, the login account, the setup state machine |
 | `src/tools/` | Build tools (`pagec`) |
 | `web/pages/` | The `.page` files |

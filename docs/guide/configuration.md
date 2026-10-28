@@ -85,7 +85,8 @@ idle_refresh_s = 60        # seconds between checks while it does not
 ```ini
 [web]
 bind = 0.0.0.0             # 127.0.0.1 to allow only the Pi itself
-port = 8080
+port = 80
+legacy_port = 8080         # the old address redirects here; 0 for none
 settings_access = lan      # who may save from the gear: lan, pin, open or off
 #settings_pin = 2468       # for settings_access = pin
 ```

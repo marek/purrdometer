@@ -29,7 +29,7 @@ rotation history survives both.
 |---|---|---|
 | `purrdometer-logger.service` | `purrdometer-logger` against `/var/lib/purrdometer` | `purrdometer`, with `bluetooth` |
 | `purrdometer-display.service` | `purrdometer-display` | `purrdometer`, with `spi`, `i2c`, `gpio` |
-| `purrdometer-web.service` | `purrdometer-web`, on 8080 and on port 80 for setup mode's portal | `purrdometer`, read-only system, no devices, memory and CPU capped ([../web/dashboard.md](../web/dashboard.md)); `CAP_NET_BIND_SERVICE` only, for port 80 |
+| `purrdometer-web.service` | `purrdometer-web`, on port 80, and 8080 redirecting to it | `purrdometer`, read-only system, no devices, memory and CPU capped ([../web/dashboard.md](../web/dashboard.md)); `CAP_NET_BIND_SERVICE` only, for port 80 |
 | `purrdometer-setup.service` | `purrdometer-setup`: the hotspot, joining WiFi, the login ([../network/setup.md](../network/setup.md#the-helper)) | root: the one privileged part; it acts only on requests the others leave in `/var/lib/purrdometer` |
 
 All restart on failure and start at boot. The first three share

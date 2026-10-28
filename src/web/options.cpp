@@ -9,7 +9,7 @@ namespace {
 void usage()
 {
     std::println(stderr, "usage: purrdometer-web [--config PATH] [--overrides PATH] [--profiles PATH] [--db PATH] [--wheels PATH]\n"
-                         "       [--bind ADDR] [--port N] [--portal-port N] [--check-config] [--selftest]");
+                         "       [--bind ADDR] [--port N] [--legacy-port N] [--check-config] [--selftest]");
 }
 
 } // namespace
@@ -32,7 +32,7 @@ std::optional<Options> parseOptions(int argc, char** argv)
         else if (a == "--wheels") p.wheels = next();
         else if (a == "--bind") o.site.bind = next();
         else if (a == "--port") o.site.port = std::stoi(next());
-        else if (a == "--portal-port") o.site.portalPort = std::stoi(next());
+        else if (a == "--legacy-port") o.site.legacyPort = std::stoi(next());
         else return usage(), std::nullopt;
     }
     return o;

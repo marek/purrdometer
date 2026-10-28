@@ -1,7 +1,9 @@
 #include "web/server.h"
 
 #include "web/dashboard_routes.h"
-#include "web/portal.h"
+#include "web/captive.h"
+#include "web/legacy.h"
+#include "web/setup_routes.h"
 #include "web/settings_routes.h"
 #include "web/wheel_routes.h"
 
@@ -22,6 +24,8 @@ void addRoutes(const Site& site, httplib::Server& server)
     addDashboardRoutes(site, server);
     addSettingsRoutes(site, server);
     addWheelRoutes(site, server);
+    addSetupRoutes(site, server);
+    addCaptiveRedirect(site, server);
     server.set_exception_handler([](const httplib::Request& req, httplib::Response& res, std::exception_ptr ep) {
         try {
             std::rethrow_exception(ep);
@@ -43,20 +47,21 @@ int serve(const Site& site)
     addRoutes(site, server);
     std::println("serving on http://{}:{}/ from {} ({}); settings: {}", bind, port, site.paths.db,
                  describe(cfg.wheel, cfg.editable.units), accessName(cfg.access));
-    httplib::Server portal;
-    std::jthread portalThread;
-    if (site.portalPort > 0) {
-        portal.new_task_queue = [] { return new httplib::ThreadPool(1); };
-        addPortalRoutes(site, portal);
-        if (portal.bind_to_port(bind, site.portalPort)) {
-            portalThread = std::jthread([&portal] { portal.listen_after_bind(); });
-            std::println("setup portal on port {}", site.portalPort);
+    int legacy = site.legacyPort.value_or(cfg.legacyPort);
+    httplib::Server old;
+    std::jthread oldThread;
+    if (legacy > 0 && legacy != port) {
+        old.new_task_queue = [] { return new httplib::ThreadPool(1); };
+        addLegacyRedirect(port, old);
+        if (old.bind_to_port(bind, legacy)) {
+            oldThread = std::jthread([&old] { old.listen_after_bind(); });
+            std::println("port {} redirects to port {}", legacy, port);
         } else {
-            std::println(stderr, "no setup portal: cannot listen on port {}", site.portalPort);
+            std::println(stderr, "port {} is taken: no redirect from it", legacy);
         }
     }
     if (!server.listen(bind, port)) {
-        portal.stop();
+        old.stop();
         std::println(stderr, "cannot listen on {}:{}", bind, port);
         return 1;
     }

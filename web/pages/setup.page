@@ -16,7 +16,7 @@
 <section class="ok">
   <strong>Joining <%= v.state.network.empty() ? "your WiFi" : v.state.network %>…</strong>
   <p>The Pi leaves this hotspot to join it, so this page stops answering. Put your phone back on your
-  WiFi: the screen shows the Pi's new address, and the dashboard is there on port 8080.</p>
+  WiFi: the screen shows the Pi's new address, which is the dashboard's.</p>
   <p class="hint">If the password was wrong, the hotspot comes back within a minute with the reason on the screen; join it again.</p>
 </section>
 <% } else { -%>

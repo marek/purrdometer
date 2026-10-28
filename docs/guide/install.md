@@ -34,7 +34,7 @@ Either way the package:
 
 - installs and starts three services: `purrdometer-logger` (Bluetooth to the
   database), `purrdometer-display` (the screen) and `purrdometer-web` (the
-  [web dashboard](web.md) on port 8080);
+  [web dashboard](web.md) on port 80);
 - sets Bluetooth's LE supervision timeout to 6 s and turns WiFi power-save
   off, which keeps the sensor connected ([troubleshooting](troubleshooting.md#a-sensor-that-keeps-dropping));
 - creates a `purrdometer` system user and `/var/lib/purrdometer` for the history.

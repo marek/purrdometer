@@ -2,7 +2,9 @@
 
 The same history as the screen, in a browser on your home network:
 
-**http://whiskerwheel:8080/**
+**http://whiskerwheel/**
+
+The old address, `http://whiskerwheel:8080/`, redirects there.
 
 ![The dashboard: totals, today and live speed, the last 30 days, a year of days, and all time with total distance rising](../media/web.png)
 
@@ -50,7 +52,7 @@ only in the config file.
 
 ## JSON
 
-`http://whiskerwheel:8080/api/stats` has the same numbers for scripts: the
+`http://whiskerwheel/api/stats` has the same numbers for scripts: the
 wheel in use, totals (with `estimated_rotations`, the turns the sensor missed
 waking up), today, live state and every day with rotations.
 
@@ -61,7 +63,8 @@ In `/etc/purrdometer/purrdometer.conf`:
 ```ini
 [web]
 bind = 0.0.0.0          # 127.0.0.1 to allow only the Pi itself
-port = 8080
+port = 80
+legacy_port = 8080      # redirects to port; 0 for none
 settings_access = lan   # lan, pin, open or off
 #settings_pin = 2468
 ```
@@ -75,5 +78,5 @@ keep it on the home network. It uses the same `[wheel]` setting as the screen
 ```sh
 systemctl status purrdometer-web
 journalctl -u purrdometer-web -n 20
-curl http://localhost:8080/healthz      # on the Pi: prints ok
+curl http://localhost/healthz      # on the Pi: prints ok
 ```

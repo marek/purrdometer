@@ -43,7 +43,7 @@ bool App::showSetup()
     setup::State state = setup::readState(paths_.setupState);
     if (!state.active())
         return false;
-    screen_.show(renderSetup(fonts_, state, std::time(nullptr)));
+    screen_.show(renderSetup(fonts_, state, std::time(nullptr), config_.get().port));
     nextDraw_ = Clock::now() + SETUP_CHECK;
     return true;
 }

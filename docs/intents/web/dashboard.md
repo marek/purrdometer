@@ -48,8 +48,9 @@ the browser's light or dark preference.
 
 | Subject | Rule |
 |---|---|
-| Config | `[web] bind` (default `0.0.0.0`) and `port` (default 8080) in `purrdometer.conf`; `[wheel]` as for the display; both files are read on every request, so a saved setting applies at once |
+| Config | `[web] bind` (default `0.0.0.0`) and `port` (default 80, so the dashboard is `http://whiskerwheel/`) in `purrdometer.conf`; `[wheel]` as for the display; both files are read on every request, so a saved setting applies at once |
+| One server | The dashboard, the JSON, the settings and the setup page are one server on `port`. `[web] legacy_port` (default 8080, 0 for none) answers any request with a redirect to the same path on `port`, for addresses from before 1.0 |
 | Access | No login: it is for the home network. `bind = 127.0.0.1` keeps it local. Saving settings has its own rule ([settings.md](settings.md)) |
-| Service | `purrdometer-web.service` as `purrdometer`, with a read-only system except its state directory (where `settings.conf` and `profiles.conf` live), no devices, `MemoryMax=64M`, `CPUQuota=50%` |
+| Service | `purrdometer-web.service` as `purrdometer`, with a read-only system except its state directory (where `settings.conf` and `profiles.conf` live), no devices, `MemoryMax=64M`, `CPUQuota=50%`; its one privilege is `CAP_NET_BIND_SERVICE`, for port 80 |
 | Errors | A failing request logs the path and the exception and answers 500; the process keeps serving |
 | Proven by | `purrdometer-web --selftest`: lengths and units, the presets, calendar arithmetic, escaping, number formats, a real database through the whole page and the JSON |

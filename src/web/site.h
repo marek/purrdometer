@@ -28,7 +28,7 @@ struct Site {
     WheelPresets presets;
     std::optional<std::string> bind;
     std::optional<int> port;
-    int portalPort = 80;                          // setup mode's captive portal; 0: none
+    std::optional<int> legacyPort;                // overrides [web] legacy_port
     std::string hotspotPrefix = setup::HOTSPOT_PREFIX; // who may use /setup
 
     Config config() const { return loadConfig(presets, paths.config, paths.overrides, paths.profiles); }

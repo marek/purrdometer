@@ -99,7 +99,7 @@ media: $(DISPLAY)
 serve: all
 	@mkdir -p $(PURR_TMP)
 	$(DISPLAY) --wheels data/wheels.conf --demo-db $(PURR_TMP)/demo.db
-	$(WEB) --db $(PURR_TMP)/demo.db --wheels data/wheels.conf --config /dev/null --port 8081
+	$(WEB) --db $(PURR_TMP)/demo.db --wheels data/wheels.conf --config /dev/null --port 8081 --legacy-port 0
 
 deb:
 	packaging/build-deb.sh

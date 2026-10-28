@@ -32,7 +32,7 @@ Four screens, picked from the touch bar along the bottom edge.
 
 ## Web
 
-You can also view history in a browser at http://whiskerwheel:8080. It's served by a tiny C++ binary that compiles pages directly into C++—taking up a few megabytes of RAM and responding in tens of milliseconds, even on a Pi Zero.
+You can also view history in a browser at http://whiskerwheel. It's served by a tiny C++ binary that compiles pages directly into C++—taking up a few megabytes of RAM and responding in tens of milliseconds, even on a Pi Zero.
 
 ![The web dashboard: totals and live speed, the last 30 days, a year of days, all time with total distance](docs/media/web.png)
 

@@ -37,7 +37,8 @@ struct Config {
     std::map<int, Wheel> wheels; // each profile's wheel
     Wheel wheel;               // the current profile's
     std::string bind = "0.0.0.0";
-    int port = 8080;
+    int port = 80;
+    int legacyPort = 8080;     // redirects to port; 0: none
     SettingsAccess access = SettingsAccess::Lan;
     std::string pin;
     std::vector<std::string> errors;
