@@ -38,6 +38,12 @@ int selftest()
     check(a.reset && a.delta == 5, "a restarted sensor's count is added");
     a = account(Sample{Counter::Crank, 509, 0}, 100, {Counter::Crank, 8, 0}, 100 + 600);
     check(a.reset && a.delta == 8, "509 -> 8 ten minutes later adds 8");
+    a = account(Sample{Counter::Crank, 10, 41334}, 100, {Counter::Crank, 5, 10855}, 100 + 14.6 * 3600);
+    check(a.reset && a.delta == 5, "10 -> 5 after a night asleep: the sensor restarted, 5 turns, not 65,531");
+    a = account(Sample{Counter::Wheel, 10, 0}, 100, {Counter::Wheel, 5, 0}, 100 + 30 * 86400);
+    check(a.reset && a.delta == 5, "a wheel counter going back after a month: 5 turns");
+    a = account(Sample{Counter::Crank, 65000, 0}, 100, {Counter::Crank, 200, 0}, 100 + 3600);
+    check(!a.reset && a.delta == 736, "a real 16-bit wrap still counts across it");
     a = account(Sample{Counter::Crank, 509, 0}, 100, {Counter::Crank, 300, 0}, 101);
     check(a.reset && a.delta == 0, "a restart count too high for the time is refused");
     a = account(Sample{Counter::Crank, 100, 0}, 100, {Counter::Crank, 1100, 0}, 101);
