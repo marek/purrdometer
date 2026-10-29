@@ -110,6 +110,10 @@ media: $(DISPLAY)
 	@mkdir -p $(PURR_TMP)
 	$(DISPLAY) --wheels data/wheels.conf --config /dev/null --demo-db $(PURR_TMP)/demo.db --preview docs/media
 
+# Render the two editable GitHub social-preview SVGs to uploadable 1280x640 PNGs.
+social-previews:
+	tools/render-social-previews.sh
+
 # The web dashboard on :8081 over the same fake history, from the checkout.
 serve: all
 	@mkdir -p $(PURR_TMP)
@@ -125,6 +129,6 @@ clean:
 
 .DELETE_ON_ERROR:
 
-.PHONY: all test test-address test-thread preview media serve deb clean
+.PHONY: all test test-address test-thread preview media social-previews serve deb clean
 
 -include $(WEB_OBJS:.o=.d) $(DISPLAY_OBJS:.o=.d) $(LOGGER_OBJS:.o=.d) $(SETUP_OBJS:.o=.d)

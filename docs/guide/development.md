@@ -82,7 +82,9 @@ mistake is a compiler error at the template's line. The full syntax is in
 
 `make preview` needs no panel, so screen work can be checked by eye before it
 goes near the hardware. `make media` writes the same renders to `docs/media/`
-for the README.
+for the README. `make social-previews` converts the editable normal and weird
+social-preview SVGs in that folder to the 1280×640 PNGs GitHub accepts; it
+requires `rsvg-convert` from librsvg.
 
 The testing venues, including the checks on the Pi itself, are in
 [workspace/build-and-run.md](../intents/workspace/build-and-run.md).

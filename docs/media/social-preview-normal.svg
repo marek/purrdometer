@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10282d"/>
+      <stop offset="1" stop-color="#173a40"/>
+    </linearGradient>
+    <clipPath id="wheelClip"><circle cx="1005" cy="224" r="200"/></clipPath>
+    <clipPath id="screenClip"><rect x="800" y="452" width="410" height="160" rx="14"/></clipPath>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="13" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <circle cx="70" cy="52" r="150" fill="#3fd6cb" opacity="0.05"/>
+  <circle cx="620" cy="670" r="300" fill="#3fd6cb" opacity="0.035"/>
+
+  <circle cx="1005" cy="224" r="211" fill="#55ddd0"/>
+  <image x="805" y="24" width="400" height="400" preserveAspectRatio="xMidYMid slice" clip-path="url(#wheelClip)" xlink:href="wheel.jpg"/>
+  <circle cx="1005" cy="224" r="200" fill="none" stroke="#b9fff8" stroke-width="4" opacity="0.75"/>
+
+  <g filter="url(#shadow)">
+    <rect x="788" y="440" width="434" height="184" rx="23" fill="#081618" stroke="#65e6db" stroke-width="4"/>
+    <image x="800" y="452" width="410" height="160" preserveAspectRatio="xMidYMid meet" clip-path="url(#screenClip)" xlink:href="0-now.png"/>
+  </g>
+
+  <g font-family="Helvetica">
+    <text x="74" y="171" fill="#71eadf" font-size="27" font-weight="700" letter-spacing="5">RASPBERRY PI · BLE · E-PAPER</text>
+    <text x="68" y="290" fill="#ffffff" font-size="96" font-weight="800" letter-spacing="-4">purrdometer</text>
+    <rect x="74" y="323" width="96" height="8" rx="4" fill="#55ddd0"/>
+    <text x="74" y="394" fill="#ffffff" font-size="45" font-weight="600">a cat-wheel odometer</text>
+    <text x="76" y="452" fill="#c7dcde" font-size="27">distance · speed · rotations · history</text>
+    <text x="76" y="546" fill="#9bb9bc" font-size="22">Bluetooth cadence sensor tracking for very serious zoomies.</text>
+  </g>
+</svg>
